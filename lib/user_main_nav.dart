@@ -1,15 +1,20 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'order_screen.dart';
 import 'announcement_user_screen.dart';
 import 'feedback_screen.dart';
 import 'customer_history_screen.dart';
+import 'profile_screen.dart';
 import 'tutorial_overlay.dart';
 import 'widgets/bunny_icon.dart';
+import 'force_update_screen.dart';
 
 class UserMainNav extends StatefulWidget {
   final String uid;
@@ -99,119 +104,55 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
       });
     }
 
-    _checkUpdateLink();
+    _checkUpdateFromGitHub();
   }
 
-  Future<void> _checkUpdateLink() async {
+  Future<void> _checkUpdateFromGitHub() async {
     try {
-      final doc = await firestore
-          .collection("settings")
-          .doc("app_settings")
-          .get();
-      if (!doc.exists || !mounted) return;
-      final link = doc["update_link"] ?? "";
-      if (link.toString().trim().isEmpty) return;
-      _showUpdatePopup(link.toString().trim());
+      final res = await http.get(
+        Uri.parse("https://api.github.com/repos/wukongfantastic5-droid/bunnyfresh/releases/latest"),
+        headers: {"Accept": "application/vnd.github.v3+json"},
+      );
+      if (res.statusCode != 200 || !mounted) return;
+      final json = jsonDecode(res.body);
+      final tagName = (json["tag_name"] as String?) ?? "";
+      final ghVersion = tagName.replaceFirst(RegExp(r'^v'), '');
+      String? ghUrl;
+      final assets = json["assets"] as List<dynamic>? ?? [];
+      for (final asset in assets) {
+        final name = (asset as Map<String, dynamic>)["name"] as String? ?? "";
+        if (name.endsWith(".apk")) {
+          ghUrl = asset["browser_download_url"] as String?;
+          break;
+        }
+      }
+      if (ghVersion.isEmpty || ghUrl == null) return;
+      final info = await PackageInfo.fromPlatform();
+      if (!_isVersionLower(info.version.trim(), ghVersion)) return;
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ForceUpdateScreen(
+            downloadUrl: ghUrl!,
+            latestVersion: ghVersion,
+            currentVersion: info.version.trim(),
+          ),
+        ),
+      );
     } catch (_) {}
   }
 
-  void _showUpdatePopup(String url) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child: Container(
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF0D7377), Color(0xFF14C38E)],
-              ),
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0D7377).withOpacity(0.4),
-                  blurRadius: 30,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Icon(Icons.system_update_rounded, color: Colors.white, size: 36),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  "Kemas Kini Tersedia",
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  "Sila muat turun versi terbaru aplikasi untuk pengalaman yang lebih baik.",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: Colors.white.withOpacity(0.85),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-                    },
-                    icon: const Icon(Icons.download_rounded, color: Color(0xFF0D7377)),
-                    label: Text(
-                      "Muat Turun Sekarang",
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF0D7377),
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text(
-                    "Nanti sahaja",
-                    style: GoogleFonts.poppins(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  bool _isVersionLower(String current, String latest) {
+    final cur = current.split('.').map(int.parse).toList();
+    final lat = latest.split('.').map(int.parse).toList();
+    for (int i = 0; i < 3; i++) {
+      final c = i < cur.length ? cur[i] : 0;
+      final l = i < lat.length ? lat[i] : 0;
+      if (c < l) return true;
+      if (c > l) return false;
+    }
+    return false;
   }
 
   @override
@@ -238,6 +179,7 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
     AnnouncementUserScreen(),
     const FeedbackScreen(),
     const CustomerHistoryScreen(),
+    ProfileScreen(uid: widget.uid),
   ];
 
   @override
@@ -463,6 +405,37 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
                       ),
                     ),
                     label: "Sejarah",
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: index == 4
+                            ? Color(0xFF0D7377).withOpacity(0.1)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        Icons.person_outline_rounded,
+                        size: 26,
+                        color: index == 4 ? Color(0xFF0D7377) : Colors.grey.shade500,
+                      ),
+                    ),
+                    activeIcon: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF0D7377).withOpacity(0.15), Color(0xFF14C38E).withOpacity(0.1)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        Icons.person_rounded,
+                        size: 26,
+                        color: Color(0xFF0D7377),
+                      ),
+                    ),
+                    label: "Profil",
                   ),
                 ],
               ),

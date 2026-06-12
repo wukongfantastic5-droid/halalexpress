@@ -44,6 +44,8 @@ class _AdminScreenState extends State<AdminScreen> {
   final Set<String> _acceptingOrderIds = {};
   final Map<String, DateTime> _recentlyFailedIds = {};
   StreamSubscription? _riderVerificationSub;
+  StreamSubscription? _ordersSub;
+  List<QueryDocumentSnapshot>? _lastOrdersSnapshot;
 
   @override
   void initState() {
@@ -51,6 +53,7 @@ class _AdminScreenState extends State<AdminScreen> {
     _startProximityCheck();
     _startRiderLocationUpdates();
     _listenRiderVerification();
+    _listenOrders();
   }
 
   @override
@@ -58,6 +61,7 @@ class _AdminScreenState extends State<AdminScreen> {
     _proximityTimer?.cancel();
     _riderLocationTimer?.cancel();
     _riderVerificationSub?.cancel();
+    _ordersSub?.cancel();
     player.dispose();
     searchController.dispose();
     super.dispose();
@@ -67,17 +71,99 @@ class _AdminScreenState extends State<AdminScreen> {
     if (!widget.isRider) return;
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
+    debugPrint("[RIDER] _listenRiderVerification started for uid=$uid");
     _riderVerificationSub = firestore
         .collection("riders")
         .doc(uid)
         .snapshots()
         .listen((snap) {
-      if (!snap.exists) return;
+      if (!snap.exists) { debugPrint("[RIDER] verification snap not exists"); return; }
       final verified = snap["rider_verified"] == true;
+      debugPrint("[RIDER] verification snap: verified=$verified, _riderVerified=$_riderVerified");
       if (verified != _riderVerified) {
-        if (mounted) setState(() => _riderVerified = verified);
+        setState(() => _riderVerified = verified);
+      }
+      if (verified && _lastOrdersSnapshot != null) {
+        debugPrint("[RIDER] verification confirmed, re-processing ${_lastOrdersSnapshot!.length} stored orders");
+        _processPendingOrders(_lastOrdersSnapshot!);
+      } else if (verified && _lastOrdersSnapshot == null) {
+        debugPrint("[RIDER] verification confirmed but no stored orders yet");
       }
     });
+  }
+
+  void _listenOrders() {
+    if (!widget.isRider) { debugPrint("[RIDER] _listenOrders: not rider, skip"); return; }
+    debugPrint("[RIDER] _listenOrders subscribing...");
+    _ordersSub = firestore
+        .collection("orders")
+        .where("status", isNotEqualTo: "delivered")
+        .snapshots()
+        .listen((snap) {
+      if (!mounted) { debugPrint("[RIDER] orders snap: not mounted"); return; }
+      _lastOrdersSnapshot = snap.docs;
+      debugPrint("[RIDER] orders snap received: ${snap.docs.length} docs, _riderVerified=$_riderVerified");
+      for (final doc in snap.docs) {
+        final d = doc.data() as Map<String, dynamic>;
+        debugPrint("[RIDER]   order ${doc.id}: status=${d["status"]}, rider_uid=${d["rider_uid"]}, offered_to=${d["offered_to"]}");
+      }
+      if (_riderVerified) {
+        _processPendingOrders(snap.docs);
+      } else {
+        debugPrint("[RIDER] orders snap skipped: not verified yet");
+      }
+    });
+  }
+
+  void _processPendingOrders(List<QueryDocumentSnapshot> allDocs) {
+    debugPrint("[RIDER] _processPendingOrders: totalDocs=${allDocs.length}, _riderVerified=$_riderVerified, _isShowingOffer=$_isShowingOffer, _isAcceptingBatch=$_isAcceptingBatch");
+    if (!_riderVerified || _isShowingOffer || _isAcceptingBatch) {
+      debugPrint("[RIDER] _processPendingOrders SKIPPED: verified=$_riderVerified showing=$_isShowingOffer accepting=$_isAcceptingBatch");
+      return;
+    }
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? "";
+    if (currentUid.isEmpty) return;
+
+    final pendingOfferedToMe = <MapEntry<String, Map<String, dynamic>>>[];
+    final pendingUnclaimed = <QueryDocumentSnapshot>[];
+
+    for (final doc in allDocs) {
+      final d = doc.data() as Map<String, dynamic>;
+      debugPrint("[RIDER] checking order ${doc.id}: status=${d["status"]}, rider_uid=${d["rider_uid"]}, offered_to=${d["offered_to"]}");
+      if (d["status"] != "pending") {
+        debugPrint("[RIDER]   skip: status is ${d["status"]} not pending");
+        continue;
+      }
+      if ((d["rider_uid"] ?? "").toString().isNotEmpty) {
+        debugPrint("[RIDER]   skip: rider_uid already set");
+        continue;
+      }
+      if (_acceptingOrderIds.contains(doc.id)) {
+        debugPrint("[RIDER]   skip: in _acceptingOrderIds");
+        continue;
+      }
+      final lastFail = _recentlyFailedIds[doc.id];
+      if (lastFail != null &&
+          DateTime.now().difference(lastFail).inSeconds < 5) {
+        debugPrint("[RIDER]   skip: recently failed ${DateTime.now().difference(lastFail).inSeconds}s ago");
+        continue;
+      }
+      final offered = (d["offered_to"] ?? "").toString();
+      debugPrint("[RIDER]   offered=$offered, currentUid=$currentUid");
+      if (offered == currentUid) {
+        pendingOfferedToMe.add(MapEntry(doc.id, d));
+      } else {
+        pendingUnclaimed.add(doc);
+      }
+    }
+
+    debugPrint("[RIDER] pendingOfferedToMe=${pendingOfferedToMe.length}, pendingUnclaimed=${pendingUnclaimed.length}, _activeOrderCount=$_activeOrderCount");
+
+    if (pendingOfferedToMe.isNotEmpty) {
+      _showBatchOfferDialog(pendingOfferedToMe);
+    } else if (pendingUnclaimed.isNotEmpty && _activeOrderCount < 3) {
+      _tryClaimBatch(pendingUnclaimed);
+    }
   }
 
   Future<void> _updateRiderLocation() async {
@@ -269,15 +355,22 @@ class _AdminScreenState extends State<AdminScreen> {
       );
     }).toList();
 
-    final result = await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _BatchOfferDialog(
-        orders: ordersList,
-        onResult: (r) => Navigator.pop(ctx, r),
-      ),
-    );
-    _isShowingOffer = false;
+    String? result;
+    try {
+      result = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => _BatchOfferDialog(
+          orders: ordersList,
+          onResult: (r) => Navigator.pop(ctx, r),
+        ),
+      );
+    } catch (e) {
+      debugPrint("[RIDER] _showBatchOfferDialog error: $e");
+    } finally {
+      _isShowingOffer = false;
+      if (mounted) setState(() {});
+    }
 
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return;
@@ -287,24 +380,93 @@ class _AdminScreenState extends State<AdminScreen> {
       for (final entry in offeredOrders) {
         _acceptingOrderIds.add(entry.key);
       }
-      // Set flag immediately to block re-trigger and show spinner
       _isAcceptingBatch = true;
       if (mounted) setState(() {});
+
+      // Show loading dialog until orders appear in active list
+      final acceptedIds = offeredOrders.map((e) => e.key).toSet();
+      final loadingCtx = context;
+      if (loadingCtx.mounted) {
+        showDialog(
+          context: loadingCtx,
+          barrierDismissible: false,
+          builder: (_) => PopScope(
+            canPop: false,
+            child: AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              content: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 4,
+                        color: Color(0xFF0D7377),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      "Sila tunggu...",
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF0D7377),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Pesanan sedang diproses",
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }
+
       final acceptOk = await _acceptBatch(offeredOrders, currentUser);
       if (!acceptOk) {
-        // Failed — keep cooldown so it doesn't spam, remove from tracking
         for (final entry in offeredOrders) {
           _acceptingOrderIds.remove(entry.key);
           _recentlyFailedIds[entry.key] = DateTime.now();
         }
       } else {
-        // Success — remove tracking (stream should show "accepted")
         for (final entry in offeredOrders) {
           _acceptingOrderIds.remove(entry.key);
         }
       }
-      // Wait for Firestore stream to reflect changes before allowing new offers
-      await Future.delayed(const Duration(seconds: 2));
+
+      // Wait for orders to appear in active list (poll Firestore)
+      if (acceptOk && mounted) {
+        for (int i = 0; i < 20; i++) {
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (!mounted) break;
+          final check = await firestore
+              .collection("orders")
+              .where(FieldPath.documentId, whereIn: acceptedIds.toList())
+              .get();
+          final allDone = check.docs.every((doc) {
+            final s = (doc.data() as Map)["status"] as String? ?? "";
+            return s == "accepted" || s == "on the way" || s == "delivered";
+          });
+          if (allDone) break;
+        }
+      }
+
+      // Close loading dialog
+      if (mounted) Navigator.of(context, rootNavigator: true).pop();
+
       _isAcceptingBatch = false;
       if (mounted) setState(() {});
     } else {
@@ -331,7 +493,11 @@ class _AdminScreenState extends State<AdminScreen> {
     try {
       final riderSnap = await firestore.collection("riders").doc(currentUser.uid).get();
       final riderData = riderSnap.data() as Map<String, dynamic>?;
-      final riderName = riderData?["full_name"] ?? "Rider";
+      var riderName = riderData?["full_name"] as String?;
+      if (riderName == null || riderName.isEmpty) {
+        final userSnap = await firestore.collection("users").doc(currentUser.uid).get();
+        riderName = userSnap["full_name"] as String? ?? "Rider";
+      }
 
       // Find current max batch_priority among rider's active orders
       final existingOrders = await firestore
@@ -540,20 +706,17 @@ class _AdminScreenState extends State<AdminScreen> {
 
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
-      String riderName = "Admin";
+      String riderName = "";
       String riderUid = currentUser?.uid ?? "";
 
       if (currentUser != null) {
         final riderDoc =
             await firestore.collection("riders").doc(currentUser.uid).get();
-        if (riderDoc.exists) {
-          riderName = riderDoc["full_name"] ?? "Admin";
-        } else {
+        riderName = riderDoc["full_name"] as String? ?? "";
+        if (riderName.isEmpty) {
           final userDoc =
               await firestore.collection("users").doc(currentUser.uid).get();
-          if (userDoc.exists) {
-            riderName = userDoc["full_name"] ?? "Admin";
-          }
+          riderName = userDoc["full_name"] as String? ?? "";
         }
       }
 
@@ -1588,39 +1751,6 @@ class _AdminScreenState extends State<AdminScreen> {
 
           final currentUid = FirebaseAuth.instance.currentUser?.uid ?? "";
 
-          // Batch dispatch: collect all pending orders I'm eligible for
-          final pendingOfferedToMe = <MapEntry<String, Map<String, dynamic>>>[];
-          final pendingUnclaimed = <QueryDocumentSnapshot>[];
-          if (widget.isRider && _riderVerified && !_isShowingOffer && !_isAcceptingBatch) {
-            for (final doc in allOrders) {
-              final d = doc.data() as Map<String, dynamic>;
-              if (d["status"] != "pending") continue;
-              if ((d["rider_uid"] ?? "").toString().isNotEmpty) continue;
-              if (_acceptingOrderIds.contains(doc.id)) continue;
-              // Skip orders that just failed to accept (5s cooldown)
-              final lastFail = _recentlyFailedIds[doc.id];
-              if (lastFail != null &&
-                  DateTime.now().difference(lastFail).inSeconds < 5) {
-                continue;
-              }
-              final offered = (d["offered_to"] ?? "").toString();
-              if (offered == currentUid) {
-                pendingOfferedToMe.add(MapEntry(doc.id, d));
-              } else {
-                pendingUnclaimed.add(doc);
-              }
-            }
-            // Show ONE batch popup for all orders offered to me
-            if (pendingOfferedToMe.isNotEmpty) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _showBatchOfferDialog(pendingOfferedToMe);
-              });
-            } else if (pendingUnclaimed.isNotEmpty && _activeOrderCount < 3) {
-              // Atomically claim all unclaimed at once (transaction = no partial state)
-              _tryClaimBatch(pendingUnclaimed);
-            }
-          }
-
           // Determine which ONE active order to show for this rider
           Iterable<QueryDocumentSnapshot> filtered;
           if (widget.isRider) {
@@ -1632,9 +1762,7 @@ class _AdminScreenState extends State<AdminScreen> {
             }).toList();
 
             // Clear processing flag once data arrives
-            if (myActive.isNotEmpty) {
-              _isAcceptingBatch = false;
-            }
+            _isAcceptingBatch = false;
 
             // Sort by priority (batch_priority first, then created_at)
             myActive.sort((a, b) {

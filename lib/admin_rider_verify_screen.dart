@@ -13,6 +13,18 @@ class AdminRiderVerifyScreen extends StatelessWidget {
         "rider_verified": status == "approved",
         "verification_status": status,
       });
+
+      if (status == "approved") {
+        final userDoc = await firestore.collection("users").doc(uid).get();
+        final fullName = userDoc["full_name"] ?? "";
+        final whatsapp = userDoc["whatsapp"] ?? "";
+        await firestore.collection("riders").doc(uid).set({
+          "full_name": fullName,
+          "whatsapp": whatsapp,
+          "rider_verified": true,
+        });
+      }
+
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

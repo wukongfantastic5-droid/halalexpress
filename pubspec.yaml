@@ -2,7 +2,7 @@ name: freshbunny
 description: "BunnyFresh - Grocery Delivery App"
 publish_to: 'none'
 
-version: 1.0.3+1
+version: 1.0.12+9
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -52,6 +52,12 @@ dependencies:
   # Permissions
   permission_handler: ^11.3.1
 
+  # APK install
+  open_file: ^4.0.0
+
+  # App info
+  package_info_plus: ^9.0.0
+
   # Excel / Export
   excel: ^4.0.6
   share_plus: ^10.1.4
@@ -93,3 +99,11 @@ flutter_launcher_icons:
   image_path: "assets/bunny_icon.png"
   adaptive_icon_background: "#0D7377"
   adaptive_icon_foreground: "assets/bunny_icon.png"
+
+
+
+
+
+
+
+

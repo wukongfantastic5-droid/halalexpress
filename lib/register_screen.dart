@@ -393,6 +393,15 @@ class _RegisterScreenState extends State<RegisterScreen>
         },
       });
 
+      if (selectedRole == "rider") {
+        await firestore.collection("riders").doc(uid).set({
+          "full_name": fullName.text.trim(),
+          "whatsapp": whatsapp.text.trim(),
+          "rider_verified": false,
+          "created_at": Timestamp.now(),
+        });
+      }
+
       setState(() => loading = false);
 
       ScaffoldMessenger.of(context).showSnackBar(

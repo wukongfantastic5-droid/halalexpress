@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login_screen.dart';
 import 'package:http/http.dart' as http;
@@ -67,6 +69,40 @@ class _InitializeScreenState extends State<InitializeScreen>
   }
 
   Future<void> startInit() async {
+    // Request install permission at app launch (Android only)
+    if (Platform.isAndroid) {
+      try {
+        final allowed = await MethodChannel("com.kampungrider/install_permission")
+            .invokeMethod<bool>("canRequestPackageInstalls");
+        if (allowed != true && mounted) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: Text(
+                "Kebenaran Pemasangan",
+                style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+              ),
+              content: Text(
+                "Sila benarkan \"Pasang aplikasi tidak diketahui\" untuk memasang kemas kini aplikasi pada masa hadapan.",
+                style: GoogleFonts.poppins(fontSize: 13),
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    MethodChannel("com.kampungrider/install_permission")
+                        .invokeMethod("openInstallSettings");
+                  },
+                  child: Text("Buka Seting", style: GoogleFonts.poppins()),
+                ),
+              ],
+            ),
+          );
+        }
+      } catch (_) {}
+    }
+
     final startTime = DateTime.now();
 
     try {

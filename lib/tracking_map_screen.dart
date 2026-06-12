@@ -276,7 +276,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen>
 
     final markers = <Marker>[];
 
-    // Rider marker with pulse ring
+    // Rider marker — motorcycle icon with pulse ring
     if (_riderPos != null) {
       markers.add(Marker(
         point: _riderPos!,
@@ -295,27 +295,24 @@ class _TrackingMapScreenState extends State<TrackingMapScreen>
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.blue.withOpacity(0.15 * _pulseAnim.value),
+                      color: const Color(0xFF0D7377).withOpacity(0.15 * _pulseAnim.value),
                     ),
                   ),
                 ),
                 Container(
-                  width: 22,
-                  height: 22,
-                  decoration: const BoxDecoration(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.blue,
+                    color: const Color(0xFF0D7377),
                     boxShadow: [
                       BoxShadow(color: Colors.black26, blurRadius: 6),
                     ],
                   ),
-                ),
-                Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.8),
+                  child: const Icon(
+                    Icons.two_wheeler,
+                    color: Colors.white,
+                    size: 20,
                   ),
                 ),
               ],

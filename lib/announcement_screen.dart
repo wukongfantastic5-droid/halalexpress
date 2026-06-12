@@ -12,17 +12,12 @@ class AnnouncementScreen extends StatefulWidget {
 class _AnnouncementScreenState extends State<AnnouncementScreen> {
   final titleController = TextEditingController();
   final messageController = TextEditingController();
-  final linkController = TextEditingController();
-  final versionController = TextEditingController();
 
   final firestore = FirebaseFirestore.instance;
 
   bool loading = false;
   bool isUnderMaintenance = false;
   bool maintenanceLoading = false;
-  String updateLink = "";
-  String latestVersion = "";
-  bool updateSaving = false;
 
   @override
   void initState() {
@@ -34,8 +29,6 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
   void dispose() {
     titleController.dispose();
     messageController.dispose();
-    linkController.dispose();
-    versionController.dispose();
     super.dispose();
   }
 
@@ -48,10 +41,6 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
       if (doc.exists && mounted) {
         setState(() {
           isUnderMaintenance = doc["isUnderMaintenance"] ?? false;
-          updateLink = doc["update_link"] ?? "";
-          latestVersion = doc["latest_version"] ?? "";
-          linkController.text = updateLink;
-          versionController.text = latestVersion;
         });
       }
     } catch (e) {
@@ -73,7 +62,6 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
       if (mounted) {
         setState(() {
           isUnderMaintenance = value;
-          updateLink = linkController.text.trim();
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -102,40 +90,6 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
     if (mounted) {
       setState(() => maintenanceLoading = false);
     }
-  }
-
-  Future<void> saveUpdateInfo() async {
-    setState(() => updateSaving = true);
-    try {
-      await firestore
-          .collection("settings")
-          .doc("app_settings")
-          .set({
-        "update_link": linkController.text.trim(),
-        "latest_version": versionController.text.trim(),
-      }, SetOptions(merge: true));
-      if (mounted) {
-        setState(() {
-          updateLink = linkController.text.trim();
-          latestVersion = versionController.text.trim();
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Maklumat kemas kini disimpan"),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal simpan: $e"), backgroundColor: Colors.red),
-        );
-      }
-    }
-    if (mounted) setState(() => updateSaving = false);
   }
 
   Future<void> postAnnouncement() async {
@@ -354,165 +308,6 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                       ),
                     ),
                   ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF6366F1).withOpacity(0.9),
-                    const Color(0xFF818CF8).withOpacity(0.9),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF6366F1).withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.system_update_rounded,
-                          color: Colors.white,
-                          size: 26,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Kemas Kini Aplikasi",
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
-                            Text(
-                              "Versi terkini & pautan muat turun",
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.white.withOpacity(0.8),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    controller: versionController,
-                    decoration: InputDecoration(
-                      hintText: "Versi terkini (cth: 1.0.1)",
-                      hintStyle: GoogleFonts.poppins(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 12,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.tag,
-                        color: Colors.white.withOpacity(0.7),
-                        size: 20,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: linkController,
-                    decoration: InputDecoration(
-                      hintText: "URL muat turun (cth: https://play.google.com/...)",
-                      hintStyle: GoogleFonts.poppins(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 12,
-                      ),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.15),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.link,
-                        color: Colors.white.withOpacity(0.7),
-                        size: 20,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                    style: GoogleFonts.poppins(
-                      fontSize: 13,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: updateSaving ? null : saveUpdateInfo,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: updateSaving
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Color(0xFF6366F1),
-                                ),
-                              ),
-                            )
-                          : Text(
-                              "Simpan",
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                                color: const Color(0xFF6366F1),
-                              ),
-                            ),
-                    ),
-                  ),
                 ],
               ),
             ),

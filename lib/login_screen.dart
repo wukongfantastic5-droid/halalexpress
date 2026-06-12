@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -5,12 +6,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 
 import 'register_screen.dart';
 import 'gps_service.dart';
 import 'admin_main_nav.dart';
 import 'user_main_nav.dart';
 import 'rider_main_nav.dart';
+import 'force_update_screen.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -556,111 +559,37 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  void _showUpdateDialog(String url) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child: Container(
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF0D7377), Color(0xFF14C38E)],
-              ),
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0D7377).withOpacity(0.4),
-                  blurRadius: 30,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Icon(Icons.system_update_rounded, color: Colors.white, size: 36),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  "Kemas Kini Tersedia",
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  "Versi aplikasi anda sudah lapuk. Sila muat turun versi terbaru untuk terus menggunakan perkhidmatan.",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: Colors.white.withOpacity(0.85),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-                    },
-                    icon: const Icon(Icons.download_rounded, color: Color(0xFF0D7377), size: 20),
-                    label: Text(
-                      "Muat Turun Sekarang",
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF0D7377),
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text(
-                    "Nanti sahaja",
-                    style: GoogleFonts.poppins(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+  void _showUpdateScreen(String url, String currentVersion, String latestVersion) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ForceUpdateScreen(
+          downloadUrl: url,
+          latestVersion: latestVersion,
+          currentVersion: currentVersion,
+        ),
+      ),
     );
+  }
+
+  bool _isVersionLower(String current, String latest) {
+    final cur = current.split('.').map(int.parse).toList();
+    final lat = latest.split('.').map(int.parse).toList();
+    for (int i = 0; i < 3; i++) {
+      final c = i < cur.length ? cur[i] : 0;
+      final l = i < lat.length ? lat[i] : 0;
+      if (c < l) return true;
+      if (c > l) return false;
+    }
+    return false;
   }
 
   Future<void> _showHalalWelcomeIfNeeded() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final shown = prefs.getBool("halal_welcome_shown") ?? false;
-      if (shown) return;
-      await prefs.setBool("halal_welcome_shown", true);
+      final count = prefs.getInt("halal_welcome_count") ?? 0;
+      if (count >= 3) return;
+      await prefs.setInt("halal_welcome_count", count + 1);
     } catch (_) {
       return;
     }
@@ -857,35 +786,48 @@ class _LoginScreenState extends State<LoginScreen>
         final isMaintenance = settingsDoc.exists &&
             (settingsDoc["isUnderMaintenance"] == true) &&
             role != "admin";
-        final updateLink = settingsDoc["update_link"] ?? "";
-        final latestVersion = settingsDoc["latest_version"] ?? "";
 
+        // Maintenance check first (applies to all)
         if (isMaintenance) {
           Navigator.pop(context);
           setState(() {
             isLoading = false;
           });
-          _showMaintenanceDialog(updateLink.toString());
+          _showMaintenanceDialog("");
           return;
         }
 
-        if (updateLink.toString().trim().isNotEmpty &&
-            latestVersion.toString().trim().isNotEmpty &&
-            role != "admin") {
+        // Version check from GitHub (admin bypass)
+        if (role != "admin") {
           try {
-            final info = await PackageInfo.fromPlatform();
-            final currentVersion = info.version;
-            if (currentVersion.trim() != latestVersion.toString().trim()) {
-              Navigator.pop(context);
-              setState(() {
-                isLoading = false;
-              });
-              _showUpdateDialog(updateLink.toString().trim());
-              return;
+            final res = await http.get(
+              Uri.parse("https://api.github.com/repos/wukongfantastic5-droid/bunnyfresh/releases/latest"),
+              headers: {"Accept": "application/vnd.github.v3+json"},
+            );
+            if (res.statusCode == 200) {
+              final json = jsonDecode(res.body);
+              final tagName = (json["tag_name"] as String?) ?? "";
+              final ghVersion = tagName.replaceFirst(RegExp(r'^v'), '');
+              final assets = json["assets"] as List<dynamic>? ?? [];
+              String? ghUrl;
+              for (final asset in assets) {
+                final name = (asset as Map<String, dynamic>)["name"] as String? ?? "";
+                if (name.endsWith(".apk")) {
+                  ghUrl = asset["browser_download_url"] as String?;
+                  break;
+                }
+              }
+              if (ghVersion.isNotEmpty && ghUrl != null) {
+                final info = await PackageInfo.fromPlatform();
+                if (_isVersionLower(info.version.trim(), ghVersion)) {
+                  Navigator.pop(context);
+                  setState(() => isLoading = false);
+                  _showUpdateScreen(ghUrl, info.version.trim(), ghVersion);
+                  return;
+                }
+              }
             }
-          } catch (_) {
-            // version check skipped on error
-          }
+          } catch (_) {}
         }
       } catch (e) {
       }
