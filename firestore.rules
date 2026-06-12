@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    // =========================
+    // USERS
+    // =========================
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
+    // =========================
+    // RIDERS
+    // =========================
+    match /riders/{riderId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == riderId;
+    }
+
+    // =========================
+    // ORDERS
+    // =========================
+    match /orders/{orderId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.user_uid == request.auth.uid
+                    && request.resource.data.status == "pending";
+      allow update: if request.auth != null && (
+        // admin can update anything
+        isAdmin()
+        ||
+        // rider can update non-delivered orders
+        (resource.data.status != "delivered")
+        ||
+        // customer can edit their own pending orders
+        (request.resource.data.user_uid == request.auth.uid
+         && resource.data.status == "pending")
+      );
+      allow delete: if request.auth != null && (
+        // admin can delete anything
+        isAdmin()
+        ||
+        // customer can cancel their own pending order
+        (request.auth.uid == resource.data.user_uid
+         && resource.data.status == "pending")
+      );
+    }
+
+    // =========================
+    // SETTINGS (read before login for maintenance check)
+    // =========================
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // =========================
+    // ANNOUNCEMENTS
+    // =========================
+    match /announcements/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // =========================
+    // FEEDBACK
+    // =========================
+    match /feedback/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+  }
+}

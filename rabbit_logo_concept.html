@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rabbit Logo Concept</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f7fa;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 { color: #0D7377; margin-bottom: 10px; }
+  .subtitle { color: #666; margin-bottom: 30px; }
+  .container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center;
+    max-width: 1000px;
+  }
+  .card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    width: 300px;
+    text-align: center;
+  }
+  .card h3 { color: #0D7377; margin: 15px 0 8px; }
+  .card p { color: #888; font-size: 13px; line-height: 1.5; }
+  .logo-area {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  /* Concept A: Rabbit Head + Delivery Cap */
+  .concept-a .circle-bg {
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0D7377, #14C38E);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .concept-a .rabbit-body {
+    position: relative;
+    width: 120px; height: 100px;
+  }
+  .concept-a .ear {
+    position: absolute;
+    width: 18px; height: 60px;
+    background: white;
+    border-radius: 10px 10px 5px 5px;
+    top: -40px;
+  }
+  .concept-a .ear.left { left: 20px; transform: rotate(-8deg); }
+  .concept-a .ear.right { right: 20px; transform: rotate(8deg); }
+  .concept-a .head {
+    width: 80px; height: 65px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .concept-a .eye {
+    width: 8px; height: 10px;
+    background: #0D7377;
+    border-radius: 50%;
+    position: absolute;
+    top: 22px;
+  }
+  .concept-a .eye.left-eye { left: 18px; }
+  .concept-a .eye.right-eye { right: 18px; }
+  .concept-a .nose {
+    width: 8px; height: 6px;
+    background: #FF8A80;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .concept-a .cap {
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px; height: 18px;
+    background: #0D7377;
+    border-radius: 10px 10px 0 0;
+  }
+  .concept-a .cap-brim {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px; height: 6px;
+    background: #0D7377;
+    border-radius: 3px;
+  }
+  .concept-a .whisker {
+    position: absolute;
+    width: 20px; height: 1.5px;
+    background: rgba(13,115,119,0.3);
+    top: 35px;
+  }
+  .concept-a .whisker.l1 { left: 2px; transform: rotate(-5deg); }
+  .concept-a .whisker.l2 { left: 0; top: 40px; }
+  .concept-a .whisker.r1 { right: 2px; transform: rotate(5deg); }
+  .concept-a .whisker.r2 { right: 0; top: 40px; }
+
+  /* Concept B: Full Rabbit Running with Package */
+  .concept-b .logo-box {
+    width: 200px; height: 200px;
+    background: linear-gradient(135deg, #0D7377, #14C38E);
+    border-radius: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .concept-b .run-rabbit {
+    position: relative;
+    width: 130px; height: 100px;
+  }
+  .concept-b .run-body {
+    width: 60px; height: 50px;
+    background: white;
+    border-radius: 30px 30px 20px 20px;
+    position: absolute;
+    bottom: 15px;
+    left: 35px;
+  }
+  .concept-b .run-ear {
+    position: absolute;
+    width: 12px; height: 45px;
+    background: white;
+    border-radius: 6px;
+    top: -15px;
+  }
+  .concept-b .run-ear.left-ear { left: 10px; transform: rotate(-12deg); }
+  .concept-b .run-ear.right-ear { right: 10px; transform: rotate(10deg); }
+  .concept-b .run-head {
+    width: 55px; height: 50px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: -5px;
+    left: 38px;
+  }
+  .concept-b .eye-b {
+    width: 7px; height: 9px;
+    background: #0D7377;
+    border-radius: 50%;
+    position: absolute;
+    top: 18px;
+  }
+  .concept-b .eye-b.left-b { left: 12px; }
+  .concept-b .eye-b.right-b { right: 12px; }
+  .concept-b .package {
+    position: absolute;
+    bottom: 30px;
+    right: -5px;
+    width: 35px; height: 28px;
+    background: #FFB74D;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  }
+  .concept-b .package-line {
+    width: 20px; height: 2px;
+    background: #E65100;
+    border-radius: 1px;
+  }
+  .concept-b .package-line2 {
+    width: 2px; height: 18px;
+    background: #E65100;
+    border-radius: 1px;
+    position: absolute;
+  }
+  .concept-b .speed-line {
+    position: absolute;
+    height: 2px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 2px;
+  }
+  .concept-b .speed-line.s1 { width: 40px; top: 45px; left: -20px; }
+  .concept-b .speed-line.s2 { width: 25px; top: 60px; left: -35px; }
+  .concept-b .speed-line.s3 { width: 30px; top: 75px; left: -15px; }
+
+  /* Concept C: Minimalist Rabbit + Scooter */
+  .concept-c .minimal-box {
+    width: 200px; height: 200px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 10px 40px rgba(13,115,119,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border: 3px solid #0D7377;
+  }
+  .concept-c .minimal-rabbit {
+    position: relative;
+    width: 80px; height: 90px;
+  }
+  .concept-c .m-head {
+    width: 50px; height: 45px;
+    background: #0D7377;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .concept-c .m-ear {
+    position: absolute;
+    width: 10px; height: 40px;
+    background: #14C38E;
+    border-radius: 5px 5px 3px 3px;
+    top: -25px;
+  }
+  .concept-c .m-ear.left-ear { left: 8px; transform: rotate(-12deg); }
+  .concept-c .m-ear.right-ear { right: 8px; transform: rotate(10deg); }
+  .concept-c .m-eye {
+    width: 5px; height: 7px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 15px;
+  }
+  .concept-c .m-eye.left-m { left: 12px; }
+  .concept-c .m-eye.right-m { right: 12px; }
+  .concept-c .m-nose {
+    width: 5px; height: 4px;
+    background: #FF8A80;
+    border-radius: 50%;
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .colors-used {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 12px;
+  }
+  .color-swatch {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid #eee;
+  }
+</style>
+</head>
+<body>
+  <h1>🐇 Rabbit Logo Concepts</h1>
+  <p class="subtitle">Untuk app delivery — design minimal, frendly, dan profesional</p>
+
+  <div class="container">
+    <!-- Concept A -->
+    <div class="card concept-a">
+      <div class="logo-area">
+        <div class="circle-bg">
+          <div class="rabbit-body">
+            <div class="ear left"></div>
+            <div class="ear right"></div>
+            <div class="head">
+              <div class="cap"></div>
+              <div class="cap-brim"></div>
+              <div class="eye left-eye"></div>
+              <div class="eye right-eye"></div>
+              <div class="nose"></div>
+              <div class="whisker l1"></div>
+              <div class="whisker l2"></div>
+              <div class="whisker r1"></div>
+              <div class="whisker r2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <h3>Concept A: Rabbit + Cap</h3>
+      <p>Muka rabbit dengan delivery cap. Minimal, friendly, mudah dikenali. Ikon bulat dengan gradient teal-green sedia ada.</p>
+      <div class="colors-used">
+        <div class="color-swatch" style="background:#0D7377"></div>
+        <div class="color-swatch" style="background:#14C38E"></div>
+        <div class="color-swatch" style="background:white"></div>
+      </div>
+    </div>
+
+    <!-- Concept B -->
+    <div class="card concept-b">
+      <div class="logo-area">
+        <div class="logo-box">
+          <div class="run-rabbit">
+            <div class="run-ear left-ear"></div>
+            <div class="run-ear right-ear"></div>
+            <div class="run-head">
+              <div class="eye-b left-b"></div>
+              <div class="eye-b right-b"></div>
+            </div>
+            <div class="run-body"></div>
+            <div class="package">
+              <div class="package-line2"></div>
+              <div class="package-line"></div>
+            </div>
+            <div class="speed-line s1"></div>
+            <div class="speed-line s2"></div>
+            <div class="speed-line s3"></div>
+          </div>
+        </div>
+      </div>
+      <h3>Concept B: Running Rabbit + Package</h3>
+      <p>Arnab sedang berlari dengan bungkusan. Ada speed lines untuk convey "cepat". Ikon segi empat sama dengan rounded corner.</p>
+      <div class="colors-used">
+        <div class="color-swatch" style="background:#0D7377"></div>
+        <div class="color-swatch" style="background:#14C38E"></div>
+        <div class="color-swatch" style="background:white"></div>
+        <div class="color-swatch" style="background:#FFB74D"></div>
+      </div>
+    </div>
+
+    <!-- Concept C -->
+    <div class="card concept-c">
+      <div class="logo-area">
+        <div class="minimal-box">
+          <div class="minimal-rabbit">
+            <div class="m-ear left-ear"></div>
+            <div class="m-ear right-ear"></div>
+            <div class="m-head">
+              <div class="m-eye left-m"></div>
+              <div class="m-eye right-m"></div>
+              <div class="m-nose"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <h3>Concept C: Minimalist</h3>
+      <p>Design paling minimal — hanya head rabbit dengan telinga hijau. Sesuai untuk ikon app, profile, dan favicon. Ringkas dan clean.</p>
+      <div class="colors-used">
+        <div class="color-swatch" style="background:white"></div>
+        <div class="color-swatch" style="background:#0D7377"></div>
+        <div class="color-swatch" style="background:#14C38E"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 16px; max-width: 600px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);">
+    <p style="color: #0D7377; font-weight: bold; margin-bottom: 8px;">Suggestion nama app (base on rabbit):</p>
+    <p style="color: #555;">
+      🐇 <strong>Arnab Rider</strong> — simple, Bahasa Melayu<br>
+      🐇 <strong>RabbitExpress</strong> — English, professional<br>
+      🐇 <strong>Lompat Rider</strong> — "Lompat" = rabbit jump, unique<br>
+      🐇 <strong>BunnyDash</strong> — catchy, modern<br>
+      🐇 <strong>Kelinci Hantar</strong> — "Kelinci" = rabbit, "Hantar" = deliver
+    </p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,47 @@
+=== CANVA AI / AI IMAGE GENERATOR PROMPT ===
+
+PROMPT (English):
+"A friendly anthropomorphic rabbit mascot logo for a grocery delivery app, standing upright like a human, wearing a delivery cap, smiling warmly, holding a fresh carrot in one hand and a basket of vegetables (broccoli, tomatoes, leafy greens) in the other hand, wearing a simple delivery apron or vest with a small logo on it, clean minimal flat vector illustration style, white background, bright vibrant colors, professional brand logo design, cute but not childish, teal green and orange color scheme, high quality, no text"
+
+PROMPT (Bahasa Melayu):
+"Maskot arnab yang mesra untuk logo aplikasi penghantaran barangan runcit, berdiri tegak seperti manusia, memakai topi penghantaran, tersenyum mesra, memegang lobak merah di satu tangan dan bakul berisi sayur-sayuran (brokoli, tomato, daun hijau) di tangan yang lain, memakai apron atau vest penghantaran yang ringkas, gaya ilustrasi vektor yang bersih dan minimal, latar belakang putih, warna terang dan cergas, rekaan logo profesional, comel tapi tidak kebudak-budakan, skema warna teal hijau dan oren, berkualiti tinggi, tanpa teks"
+
+=== VARIATIONS TO TRY ===
+
+Variant 1 - Full body standing:
+"Full body anthropomorphic rabbit mascot logo, standing tall, delivery uniform, holding carrot and grocery bag, smiling, flat vector illustration, teal green and white, minimal, professional brand logo, clean background"
+
+Variant 2 - Half body close up:
+"Half body cute rabbit mascot logo, wearing delivery hat, big smile, holding carrot and vegetables, flat vector style, bright colors, teal green orange white, professional delivery app logo, clean white background"
+
+Variant 3 - Action pose:
+"Anthropomorphic rabbit mascot running forward while holding carrot and vegetables, dynamic pose, delivery cap flying back, smiling, flat vector illustration, teal green and warm orange, energetic brand logo style"
+
+=== DESIGN SPECS FOR CANVA AI ===
+
+Style: Flat vector illustration / Modern mascot logo
+Colors: 
+  - Primary: Teal (#0D7377)
+  - Secondary: Green (#14C38E)
+  - Accent: Orange/Carrot (#FF8A65 or #FFB74D)
+  - White for highlights
+Format: PNG with transparent background (if supported)
+Resolution: 1024x1024 or higher
+
+=== WHAT TO ASK CANVA AI ===
+
+In Canva AI / Magic Media:
+1. Click "Magic Media" → "Text to Image"
+2. Paste prompt above
+3. Choose "Vector" or "Illustration" style
+4. Generate multiple variations
+5. Pick the best one, then use Canva's "Background Remover" to remove background
+6. Export as PNG with transparent background
+
+=== FOR FLUTTER APP IMPLEMENTATION (after logo is ready) ===
+
+After you have the logo image, I will:
+1. Replace the current delivery icon (Icons.delivery_dining) with the new rabbit logo image
+2. Update the splash/initialize screen
+3. Update the app bar logos in both user and admin navigation
+4. Optionally update the app icon (Android/iOS)

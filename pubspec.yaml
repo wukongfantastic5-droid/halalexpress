@@ -1,0 +1,95 @@
+name: freshbunny
+description: "BunnyFresh - Grocery Delivery App"
+publish_to: 'none'
+
+version: 1.0.3+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # UI / tools
+  speech_to_text: ^7.3.0
+  url_launcher: ^6.3.2
+  http: ^1.6.0
+  intl: ^0.20.2
+  fl_chart: ^1.2.0
+  image_picker: ^1.1.2
+
+  # Firebase (FIXED ALIGNMENT)
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.0
+  cloud_firestore: ^5.4.0
+  firebase_storage: ^12.3.0
+  firebase_messaging: ^15.1.0
+
+  # Local storage
+  shared_preferences: ^2.3.0
+
+  # Location
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+  google_maps_flutter: ^2.17.0
+
+  # Maps (OpenStreetMap)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
+  # Notifications
+  flutter_local_notifications: ^17.0.0
+
+  # Audio
+  audioplayers: ^6.0.0
+
+  # Fonts
+  google_fonts: ^6.2.1
+
+  # Permissions
+  permission_handler: ^11.3.1
+
+  # Excel / Export
+  excel: ^4.0.6
+  share_plus: ^10.1.4
+  path_provider: ^2.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/audio/order_received.mp3
+    - assets/audio/job_accept.mp3
+    - assets/audio/delivered.mp3
+    - assets/audio/complete.mp3
+    - assets/audio/notification.mp3
+    - assets/bunny_icon.png
+    - assets/app_icon.png
+
+flutter_native_splash:
+  color: "#0D7377"
+  android: true
+  ios: true
+  android_gravity: fill
+  ios_content_mode: scaleAspectFill
+
+  android_12:
+    color: "#0D7377"
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/bunny_icon.png"
+  adaptive_icon_background: "#0D7377"
+  adaptive_icon_foreground: "assets/bunny_icon.png"
