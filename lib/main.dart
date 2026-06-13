@@ -87,7 +87,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   bool _darkMode = false;
-  bool _initialized = false;
 
   @override
   void initState() {
@@ -117,14 +116,8 @@ class _MyAppState extends State<MyApp> {
     if (mounted) {
       setState(() {
         _darkMode = dark;
-        _initialized = true;
       });
     }
-  }
-
-  Future<void> _saveDarkMode(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('darkMode', value);
   }
 
   @override

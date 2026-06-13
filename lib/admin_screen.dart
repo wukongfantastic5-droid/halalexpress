@@ -12,7 +12,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'notification_service.dart';
 import 'tracking_map_screen.dart';
 import 'widgets/order_timeline.dart';
 
@@ -28,8 +27,6 @@ class AdminScreen extends StatefulWidget {
 class _AdminScreenState extends State<AdminScreen> {
   final firestore = FirebaseFirestore.instance;
   final AudioPlayer player = AudioPlayer();
-  final Set<String> _newOrderPlayed = {};
-  final Map<String, bool> _wazeOpened = {};
   final TextEditingController searchController = TextEditingController();
   String _searchQuery = '';
   Map<String, bool> _nearShop = {};
@@ -71,56 +68,39 @@ class _AdminScreenState extends State<AdminScreen> {
     if (!widget.isRider) return;
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
-    debugPrint("[RIDER] _listenRiderVerification started for uid=$uid");
     _riderVerificationSub = firestore
         .collection("riders")
         .doc(uid)
         .snapshots()
         .listen((snap) {
-      if (!snap.exists) { debugPrint("[RIDER] verification snap not exists"); return; }
+      if (!snap.exists) return;
       final verified = snap["rider_verified"] == true;
-      debugPrint("[RIDER] verification snap: verified=$verified, _riderVerified=$_riderVerified");
       if (verified != _riderVerified) {
         setState(() => _riderVerified = verified);
       }
       if (verified && _lastOrdersSnapshot != null) {
-        debugPrint("[RIDER] verification confirmed, re-processing ${_lastOrdersSnapshot!.length} stored orders");
         _processPendingOrders(_lastOrdersSnapshot!);
-      } else if (verified && _lastOrdersSnapshot == null) {
-        debugPrint("[RIDER] verification confirmed but no stored orders yet");
       }
     });
   }
 
   void _listenOrders() {
-    if (!widget.isRider) { debugPrint("[RIDER] _listenOrders: not rider, skip"); return; }
-    debugPrint("[RIDER] _listenOrders subscribing...");
+    if (!widget.isRider) return;
     _ordersSub = firestore
         .collection("orders")
         .where("status", isNotEqualTo: "delivered")
         .snapshots()
         .listen((snap) {
-      if (!mounted) { debugPrint("[RIDER] orders snap: not mounted"); return; }
+      if (!mounted) return;
       _lastOrdersSnapshot = snap.docs;
-      debugPrint("[RIDER] orders snap received: ${snap.docs.length} docs, _riderVerified=$_riderVerified");
-      for (final doc in snap.docs) {
-        final d = doc.data() as Map<String, dynamic>;
-        debugPrint("[RIDER]   order ${doc.id}: status=${d["status"]}, rider_uid=${d["rider_uid"]}, offered_to=${d["offered_to"]}");
-      }
       if (_riderVerified) {
         _processPendingOrders(snap.docs);
-      } else {
-        debugPrint("[RIDER] orders snap skipped: not verified yet");
       }
     });
   }
 
   void _processPendingOrders(List<QueryDocumentSnapshot> allDocs) {
-    debugPrint("[RIDER] _processPendingOrders: totalDocs=${allDocs.length}, _riderVerified=$_riderVerified, _isShowingOffer=$_isShowingOffer, _isAcceptingBatch=$_isAcceptingBatch");
-    if (!_riderVerified || _isShowingOffer || _isAcceptingBatch) {
-      debugPrint("[RIDER] _processPendingOrders SKIPPED: verified=$_riderVerified showing=$_isShowingOffer accepting=$_isAcceptingBatch");
-      return;
-    }
+    if (!_riderVerified || _isShowingOffer || _isAcceptingBatch) return;
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? "";
     if (currentUid.isEmpty) return;
 
@@ -129,35 +109,21 @@ class _AdminScreenState extends State<AdminScreen> {
 
     for (final doc in allDocs) {
       final d = doc.data() as Map<String, dynamic>;
-      debugPrint("[RIDER] checking order ${doc.id}: status=${d["status"]}, rider_uid=${d["rider_uid"]}, offered_to=${d["offered_to"]}");
-      if (d["status"] != "pending") {
-        debugPrint("[RIDER]   skip: status is ${d["status"]} not pending");
-        continue;
-      }
-      if ((d["rider_uid"] ?? "").toString().isNotEmpty) {
-        debugPrint("[RIDER]   skip: rider_uid already set");
-        continue;
-      }
-      if (_acceptingOrderIds.contains(doc.id)) {
-        debugPrint("[RIDER]   skip: in _acceptingOrderIds");
-        continue;
-      }
+      if (d["status"] != "pending") continue;
+      if ((d["rider_uid"] ?? "").toString().isNotEmpty) continue;
+      if (_acceptingOrderIds.contains(doc.id)) continue;
       final lastFail = _recentlyFailedIds[doc.id];
       if (lastFail != null &&
           DateTime.now().difference(lastFail).inSeconds < 5) {
-        debugPrint("[RIDER]   skip: recently failed ${DateTime.now().difference(lastFail).inSeconds}s ago");
         continue;
       }
       final offered = (d["offered_to"] ?? "").toString();
-      debugPrint("[RIDER]   offered=$offered, currentUid=$currentUid");
       if (offered == currentUid) {
         pendingOfferedToMe.add(MapEntry(doc.id, d));
       } else {
         pendingUnclaimed.add(doc);
       }
     }
-
-    debugPrint("[RIDER] pendingOfferedToMe=${pendingOfferedToMe.length}, pendingUnclaimed=${pendingUnclaimed.length}, _activeOrderCount=$_activeOrderCount");
 
     if (pendingOfferedToMe.isNotEmpty) {
       _showBatchOfferDialog(pendingOfferedToMe);
@@ -214,7 +180,7 @@ class _AdminScreenState extends State<AdminScreen> {
         final nearShop = <String, bool>{};
         final nearDrop = <String, bool>{};
         for (var doc in snapshot.docs) {
-          final d = doc.data();
+          final d = doc.data() as Map<String, dynamic>;
           final shopLat = (d["shop_lat"] ?? 0).toDouble();
           final shopLng = (d["shop_lng"] ?? 0).toDouble();
           if (shopLat != 0 && shopLng != 0) {
@@ -236,7 +202,7 @@ class _AdminScreenState extends State<AdminScreen> {
             .get();
         final shopDist = <String, double>{};
         for (var doc in allSnapshot.docs) {
-          final d = doc.data();
+          final d = doc.data() as Map<String, dynamic>;
           final shopLat = (d["shop_lat"] ?? 0).toDouble();
           final shopLng = (d["shop_lng"] ?? 0).toDouble();
           if (shopLat != 0 && shopLng != 0) {
@@ -366,7 +332,6 @@ class _AdminScreenState extends State<AdminScreen> {
         ),
       );
     } catch (e) {
-      debugPrint("[RIDER] _showBatchOfferDialog error: $e");
     } finally {
       _isShowingOffer = false;
       if (mounted) setState(() {});
@@ -457,7 +422,7 @@ class _AdminScreenState extends State<AdminScreen> {
               .where(FieldPath.documentId, whereIn: acceptedIds.toList())
               .get();
           final allDone = check.docs.every((doc) {
-            final s = (doc.data() as Map)["status"] as String? ?? "";
+            final s = (doc.data() as Map<String, dynamic>)["status"] as String? ?? "";
             return s == "accepted" || s == "on the way" || s == "delivered";
           });
           if (allDone) break;
@@ -492,7 +457,7 @@ class _AdminScreenState extends State<AdminScreen> {
   ) async {
     try {
       final riderSnap = await firestore.collection("riders").doc(currentUser.uid).get();
-      final riderData = riderSnap.data() as Map<String, dynamic>?;
+      final riderData = riderSnap.data() as Map<String, dynamic>;
       var riderName = riderData?["full_name"] as String?;
       if (riderName == null || riderName.isEmpty) {
         final userSnap = await firestore.collection("users").doc(currentUser.uid).get();
@@ -507,7 +472,7 @@ class _AdminScreenState extends State<AdminScreen> {
           .get();
       int maxPriority = -1;
       for (final doc in existingOrders.docs) {
-        final d = doc.data();
+        final d = doc.data() as Map<String, dynamic>;
         final bp = d["batch_priority"];
         if (bp is int && bp > maxPriority) maxPriority = bp;
       }
@@ -1664,7 +1629,7 @@ class _AdminScreenState extends State<AdminScreen> {
     final url = waypoints.isNotEmpty
         ? "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$dest&waypoints=$waypoints&travelmode=driving"
         : "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$dest&travelmode=driving";
-    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication).catchError((_) {});
+    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication).catchError((_) => false);
   }
 
   void _showReceiptDialog(String imageUrl) {
@@ -1766,8 +1731,8 @@ class _AdminScreenState extends State<AdminScreen> {
 
             // Sort by priority (batch_priority first, then created_at)
             myActive.sort((a, b) {
-              final ad = a.data() as Map<String, dynamic>;
-              final bd = b.data() as Map<String, dynamic>;
+              final ad = a.data();
+              final bd = b.data();
               final ap = ad["batch_priority"];
               final bp = bd["batch_priority"];
               // Firestore may return int or double — handle both
@@ -2056,7 +2021,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                     ),
                                                   );
                                                 }
-                                                if (!userSnapshot.data!.exists) {
+                                                if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
                                                   return Text(
                                                     "Pelanggan Tidak Dikenali",
                                                     style: GoogleFonts.poppins(
@@ -2066,8 +2031,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                   );
                                                 }
                                                 final userData =
-                                                    userSnapshot.data!.data()
-                                                        as Map<String, dynamic>;
+                                                    userSnapshot.data!.data() as Map<String, dynamic>;
                                                 String customerName =
                                                     userData["full_name"] ??
                                                         "Unknown Customer";

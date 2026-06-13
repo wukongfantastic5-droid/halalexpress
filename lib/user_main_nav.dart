@@ -5,7 +5,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'login_screen.dart';
 import 'order_screen.dart';
 import 'announcement_user_screen.dart';
@@ -45,7 +44,6 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
   late final List<TutorialStep> _tutorialSteps;
 
   late AnimationController _slideController;
-  late Animation<Offset> _slideAnimation;
 
   final firestore = FirebaseFirestore.instance;
 
@@ -54,15 +52,8 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
     super.initState();
     _slideController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 400),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutCubic,
-    ));
     _slideController.forward();
 
     _tutorialSteps = [

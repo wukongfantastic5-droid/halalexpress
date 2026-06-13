@@ -368,13 +368,6 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
     }
   }
 
-  void _onDropSelected(String value, double lat, double lng) {
-    drop.text = value;
-    dropLat = lat;
-    dropLng = lng;
-    _calculateFare();
-  }
-
   Future<void> _calculateFare() async {
     if (shopLat == null || shopLng == null ||
         dropLat == null || dropLng == null) {
