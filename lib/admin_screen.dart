@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:http/http.dart' as http;
 import 'history_order_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -34,7 +36,6 @@ class _AdminScreenState extends State<AdminScreen> {
   Map<String, double> _shopDistances = {};
   int _activeOrderCount = 0;
   Timer? _proximityTimer;
-  Timer? _riderLocationTimer;
   bool _isShowingOffer = false;
   bool _isAcceptingBatch = false;
   bool _riderVerified = false;
@@ -48,7 +49,6 @@ class _AdminScreenState extends State<AdminScreen> {
   void initState() {
     super.initState();
     _startProximityCheck();
-    _startRiderLocationUpdates();
     _listenRiderVerification();
     _listenOrders();
   }
@@ -56,7 +56,6 @@ class _AdminScreenState extends State<AdminScreen> {
   @override
   void dispose() {
     _proximityTimer?.cancel();
-    _riderLocationTimer?.cancel();
     _riderVerificationSub?.cancel();
     _ordersSub?.cancel();
     player.dispose();
@@ -132,30 +131,8 @@ class _AdminScreenState extends State<AdminScreen> {
     }
   }
 
-  Future<void> _updateRiderLocation() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      await firestore.collection("riders").doc(user.uid).set({
-        "current_location": GeoPoint(position.latitude, position.longitude),
-        "last_seen": Timestamp.now(),
-      }, SetOptions(merge: true));
-    } catch (_) {}
-  }
-
-  void _startRiderLocationUpdates() {
-    _updateRiderLocation();
-    _riderLocationTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => _updateRiderLocation(),
-    );
-  }
-
   void _startProximityCheck() {
-    _proximityTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+    _proximityTimer = Timer.periodic(const Duration(seconds: 20), (_) async {
       try {
         final position = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high,
@@ -396,8 +373,8 @@ class _AdminScreenState extends State<AdminScreen> {
                 ),
               ),
             ),
-          ),
-        );
+      ),
+    );
       }
 
       final acceptOk = await _acceptBatch(offeredOrders, currentUser);
@@ -1421,6 +1398,18 @@ class _AdminScreenState extends State<AdminScreen> {
             await firestore.collection("riders").doc(currentUser.uid).set({
               "active_orders_count": FieldValue.increment(-1),
             }, SetOptions(merge: true));
+
+            final orderSnap = await firestore.collection("orders").doc(orderId).get();
+            if (orderSnap.exists) {
+              final fare = double.tryParse((orderSnap["fare"] ?? "0").toString()) ?? 0;
+              if (fare > 0) {
+                const riderShare = 0.8;
+                final riderAmount = fare * riderShare;
+                await firestore.collection("riders").doc(currentUser.uid).set({
+                  "wallet_balance": FieldValue.increment(riderAmount),
+                }, SetOptions(merge: true));
+              }
+            }
           }
           if (mounted) setState(() => _activeOrderCount--);
 
@@ -1527,6 +1516,8 @@ class _AdminScreenState extends State<AdminScreen> {
     switch (status) {
       case "pending":
         return "Menunggu";
+      case "menunggu_pembayaran":
+        return "Menunggu Bayaran";
       case "accepted":
         return "Dijemput";
       case "on the way":
@@ -1535,6 +1526,39 @@ class _AdminScreenState extends State<AdminScreen> {
         return "Selesai";
       default:
         return status;
+    }
+  }
+
+  Future<void> _approvePayment(String orderId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Sahkan Bayaran", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text("Bayaran telah diterima? Pesanan akan menjadi aktif untuk rider.", style: GoogleFonts.poppins(fontSize: 13)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Sahkan", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      await firestore.collection("orders").doc(orderId).update({
+        "status": "pending",
+        "payment_approved_at": Timestamp.now(),
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Bayaran disahkan. Pesanan kini aktif.", style: GoogleFonts.poppins()), backgroundColor: const Color(0xFF14C38E), behavior: SnackBarBehavior.floating),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Ralat: $e", style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+        );
+      }
     }
   }
 
@@ -1938,6 +1962,10 @@ class _AdminScreenState extends State<AdminScreen> {
                               statusColor = const Color(0xFFF59E0B);
                               statusIcon = Icons.hourglass_empty;
                               break;
+                            case "menunggu_pembayaran":
+                              statusColor = const Color(0xFFF59E0B);
+                              statusIcon = Icons.payment;
+                              break;
                             case "accepted":
                               statusColor = const Color(0xFF6366F1);
                               statusIcon = Icons.thumb_up;
@@ -1945,6 +1973,10 @@ class _AdminScreenState extends State<AdminScreen> {
                             case "on the way":
                               statusColor = const Color(0xFF0D7377);
                               statusIcon = Icons.delivery_dining;
+                              break;
+                            case "delivered":
+                              statusColor = const Color(0xFF14C38E);
+                              statusIcon = Icons.check_circle;
                               break;
                             default:
                               statusColor = Colors.grey;
@@ -2198,23 +2230,31 @@ class _AdminScreenState extends State<AdminScreen> {
                                     spacing: 8,
                                     runSpacing: 8,
                                     children: [
-                                      if ((data["status"] ?? "") == "pending")
+                                      if ((data["status"] ?? "") == "pending" && widget.isRider)
                                         _actionButton(
-                                          label: widget.isRider && _activeOrderCount >= 3
+                                          label: _activeOrderCount >= 3
                                               ? "Tugas Penuh"
                                               : "Ambil Tugas",
                                           icon: Icons.handshake,
-                                          color1: widget.isRider && _activeOrderCount >= 3
+                                          color1: _activeOrderCount >= 3
                                               ? Colors.grey
                                               : const Color(0xFF0D7377),
-                                          color2: widget.isRider && _activeOrderCount >= 3
+                                          color2: _activeOrderCount >= 3
                                               ? Colors.grey
                                               : const Color(0xFF14C38E),
-                                          onPressed: widget.isRider && _activeOrderCount >= 3
+                                          onPressed: _activeOrderCount >= 3
                                               ? null
                                               : () => assignMe(context, doc.id, data),
                                         ),
-                                      if ((data["status"] ?? "") == "accepted") ...[
+                                      if ((data["status"] ?? "") == "menunggu_pembayaran" && !widget.isRider)
+                                        _actionButton(
+                                          label: "Sahkan Bayaran",
+                                          icon: Icons.verified,
+                                          color1: const Color(0xFF14C38E),
+                                          color2: const Color(0xFF0D7377),
+                                          onPressed: () => _approvePayment(doc.id),
+                                        ),
+                                      if ((data["status"] ?? "") == "accepted" && widget.isRider) ...[
                                         _actionButton(
                                           label: "Waze",
                                           icon: Icons.navigation,
@@ -2230,21 +2270,10 @@ class _AdminScreenState extends State<AdminScreen> {
                                             }
                                           },
                                         ),
-                                        _actionButton(
-                                          label: "Map",
-                                          icon: Icons.map,
-                                          color1: const Color(0xFF0D7377),
-                                          color2: const Color(0xFF14C38E),
-                                          onPressed: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => TrackingMapScreen(
-                                                orderId: doc.id,
-                                                orderData: data,
-                                                riderUid: FirebaseAuth.instance.currentUser?.uid,
-                                              ),
-                                            ),
-                                          ),
+                                        _RiderETA(
+                                          orderId: doc.id,
+                                          orderData: data,
+                                          status: data["status"] ?? "",
                                         ),
                                         _actionButton(
                                           label: "Sudah Ambil",
@@ -2273,7 +2302,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                         color2: const Color(0xFF0D7377),
                                         onPressed: () => openWhatsApp(userPhone),
                                       ),
-                                      if ((data["status"] ?? "") == "on the way")
+                                      if ((data["status"] ?? "") == "on the way" && widget.isRider)
                                         data["receipt_url"] != null && (data["receipt_url"] ?? "").toString().isNotEmpty
                                             ? GestureDetector(
                                                 onTap: () => _showReceiptDialog(data["receipt_url"]),
@@ -2299,7 +2328,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                 color2: const Color(0xFFFBBF24),
                                                 onPressed: () => _uploadReceipt(doc.id),
                                               ),
-                                      if ((data["status"] ?? "") == "on the way") ...[
+                                      if ((data["status"] ?? "") == "on the way" && widget.isRider) ...[
                                         _actionButton(
                                           label: "Waze",
                                           icon: Icons.navigation,
@@ -2315,21 +2344,10 @@ class _AdminScreenState extends State<AdminScreen> {
                                             }
                                           },
                                         ),
-                                        _actionButton(
-                                          label: "Map",
-                                          icon: Icons.map,
-                                          color1: const Color(0xFF0D7377),
-                                          color2: const Color(0xFF14C38E),
-                                          onPressed: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => TrackingMapScreen(
-                                                orderId: doc.id,
-                                                orderData: data,
-                                                riderUid: FirebaseAuth.instance.currentUser?.uid,
-                                              ),
-                                            ),
-                                          ),
+                                        _RiderETA(
+                                          orderId: doc.id,
+                                          orderData: data,
+                                          status: data["status"] ?? "",
                                         ),
                                         _actionButton(
                                           label: "Selesaikan",
@@ -2777,6 +2795,138 @@ class _LoadingDialog extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _RiderETA extends StatefulWidget {
+  final String orderId;
+  final Map<String, dynamic> orderData;
+  final String status;
+  const _RiderETA({required this.orderId, required this.orderData, required this.status});
+  @override
+  State<_RiderETA> createState() => _RiderETAState();
+}
+
+class _RiderETAState extends State<_RiderETA> {
+  String _eta = "";
+  String _label = "";
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchETA();
+  }
+
+  bool _isOnWayToShop() {
+    return widget.status == "accepted" || widget.status == "dijemput" || widget.status == "ambil barang";
+  }
+
+  bool _isDelivering() {
+    return widget.status == "on the way" || widget.status == "dalam penghantaran";
+  }
+
+  Future<void> _fetchETA() async {
+    final d = widget.orderData;
+    final sLat = (d["shop_lat"] ?? 0).toDouble();
+    final sLng = (d["shop_lng"] ?? 0).toDouble();
+    final dropLat = (d["drop_lat"] ?? 0).toDouble();
+    final dropLng = (d["drop_lng"] ?? 0).toDouble();
+
+    if (_isOnWayToShop()) {
+      if (sLat == 0 || sLng == 0) {
+        if (mounted) setState(() { _loading = false; _eta = "-"; _label = "Ke kedai"; });
+        return;
+      }
+    } else if (_isDelivering()) {
+      if (dropLat == 0 || dropLng == 0) {
+        if (mounted) setState(() { _loading = false; _eta = "-"; _label = "Ke lokasi"; });
+        return;
+      }
+    } else {
+      if (mounted) setState(() { _loading = false; _eta = "-"; _label = ""; });
+      return;
+    }
+
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      String routeCoords;
+
+      if (_isOnWayToShop()) {
+        if (uid != null) {
+          final riderDoc = await FirebaseFirestore.instance.collection("riders").doc(uid).get();
+          if (riderDoc.exists) {
+            final loc = riderDoc["current_location"];
+            if (loc is GeoPoint) {
+              routeCoords = "${loc.longitude},${loc.latitude};$sLng,$sLat";
+            } else {
+              routeCoords = "$sLng,$sLat";
+            }
+          } else {
+            routeCoords = "$sLng,$sLat";
+          }
+        } else {
+          routeCoords = "$sLng,$sLat";
+        }
+        _label = "Ke kedai";
+      } else {
+        routeCoords = "$sLng,$sLat;$dropLng,$dropLat";
+        _label = "Ke lokasi";
+      }
+
+      final res = await http.get(
+        Uri.parse("https://router.project-osrm.org/route/v1/driving/$routeCoords?overview=false"),
+      ).timeout(const Duration(seconds: 8));
+      if (res.statusCode == 200) {
+        final body = json.decode(res.body);
+        if (body["code"] == "Ok") {
+          final legs = body["routes"][0]["legs"] as List;
+          num totalSec = 0;
+          for (final leg in legs) {
+            totalSec += (leg["duration"] as num);
+          }
+          final min = (totalSec / 60 + 10).round();
+          if (mounted) setState(() { _eta = "$min min"; _loading = false; });
+          return;
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() { _eta = "-"; _loading = false; });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const SizedBox(
+        width: 36, height: 36,
+        child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0D7377)))),
+      );
+    }
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D7377).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _isOnWayToShop() ? Icons.store_outlined : Icons.location_on_outlined,
+            size: 14,
+            color: const Color(0xFF0D7377),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            "$_label ~$_eta",
+            style: GoogleFonts.poppins(
+              fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF0D7377),
+            ),
+          ),
+        ],
       ),
     );
   }

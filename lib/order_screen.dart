@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,6 +11,8 @@ import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:installed_apps/installed_apps.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'notification_service.dart';
 import 'tracking_map_screen.dart';
 import 'widgets/order_timeline.dart';
@@ -471,7 +474,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
         "drop_lng": dLng,
         "fare": fare ?? 0,
         "distance_km": "0",
-        "status": "pending",
+        "status": "menunggu_pembayaran",
         "rider": "",
         "created_at": Timestamp.now(),
       });
@@ -542,6 +545,8 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
         return;
       }
 
+      final fare = calculatedFare ?? 0;
+
       await firestore.collection("orders").add({
         "user_uid": user.uid,
         "user_email": user.email,
@@ -557,14 +562,16 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
         "drop_lng": dropLng,
         "fare": calculatedFare ?? 0,
         "distance_km": calculatedDistance != null ? (calculatedDistance! / 1000).toStringAsFixed(2) : "0",
-        "status": "pending",
+        "status": "menunggu_pembayaran",
         "rider": "",
         "created_at": Timestamp.now(),
       });
 
-      await player.play(
-        AssetSource('audio/order_received.mp3'),
-      );
+      try {
+        await player.play(
+          AssetSource('audio/order_received.mp3'),
+        );
+      } catch (_) {} // audio is non-critical, don't block order flow
 
       _items.clear();
       _items.add({"name": "", "qty": 1});
@@ -581,116 +588,244 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
         calculatedFare = null;
       });
 
-      showDialog(
-        context: context,
-        builder: (context) {
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            child: Container(
-              padding: EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 30,
-                    offset: Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF14C38E), Color(0xFF0D7377)],
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.check_circle_rounded,
-                      color: Colors.white,
-                      size: 55,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    "Order Submitted",
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0D7377),
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    "Barangan anda telah dihantar",
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 15,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
-                  SizedBox(height: 25),
-                  SizedBox(
-                    width: double.infinity,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF14C38E), Color(0xFF0D7377)],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Color(0xFF0D7377).withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => Navigator.pop(context),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 14),
-                            child: Center(
-                              child: Text(
-                                "Done",
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
+      if (!mounted) return;
+      _showPaymentDialog(fare);
 
     } catch (e) {
       setState(() => loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Gagal untuk membuat tempahan"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      debugPrint("submitOrder error: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Gagal: $e"),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 8),
+          ),
+        );
+      }
     }
+  }
+
+  void _showPaymentDialog(double fare) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) {
+        return StreamBuilder<DocumentSnapshot>(
+          stream: firestore.collection("settings").doc("wallet_qr").snapshots(),
+          builder: (context, snap) {
+            final b64 = snap.data?["image_b64"] as String?;
+            final tngAccount = snap.data?["tng_account"] as String? ?? "";
+            final hasQR = b64 != null && b64.isNotEmpty;
+
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "Bayaran Penghantaran",
+                        style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377)),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "RM${fare.toStringAsFixed(2)}",
+                        style: GoogleFonts.poppins(fontSize: 32, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377)),
+                      ),
+                      const SizedBox(height: 16),
+                      if (hasQR)
+                        Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                            image: DecorationImage(
+                              image: MemoryImage(base64Decode(b64!)),
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Icon(Icons.qr_code_2_rounded, size: 60, color: Colors.grey.shade400),
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+                      if (tngAccount.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.phone_android, size: 16, color: const Color(0xFF0D7377)),
+                              const SizedBox(width: 6),
+                              Text(tngAccount, style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600)),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () {
+                                  Clipboard.setData(ClipboardData(text: tngAccount));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text("Disalin", style: GoogleFonts.poppins()), behavior: SnackBarBehavior.floating, duration: const Duration(seconds: 1)),
+                                  );
+                                },
+                                child: Icon(Icons.copy, size: 16, color: const Color(0xFF0D7377)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _showBankSheet(context),
+                          icon: const Icon(Icons.account_balance, size: 18),
+                          label: Text("Buka Bank", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF0D7377),
+                            side: BorderSide(color: const Color(0xFF0D7377).withOpacity(0.3)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            final msg = "Saya telah membuat bayaran RM${fare.toStringAsFixed(2)} untuk pesanan. Sila sahkan pembayaran.";
+                            final url = "https://wa.me/60123456789?text=${Uri.encodeComponent(msg)}";
+                            launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                            Navigator.pop(ctx);
+                            if (ctx.mounted) {
+                              ScaffoldMessenger.of(ctx).showSnackBar(
+                                SnackBar(
+                                  content: Text("Pesanan dihantar. Menunggu pengesahan admin.", style: GoogleFonts.poppins()),
+                                  backgroundColor: const Color(0xFF14C38E),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          },
+                          icon: Icon(Icons.send_rounded, size: 20),
+                          label: Text("Saya Sudah Bayar", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF25D366),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: Text("Tutup", style: GoogleFonts.poppins(color: Colors.grey.shade500, fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _showBankSheet(BuildContext ctx) async {
+    final bankApps = [
+      {"name": "Touch 'n Go", "pkg": "my.com.tngdigital.ewallet", "alt": "my.com.touchngo"},
+      {"name": "MAE", "pkg": "com.maybank2u.life"},
+      {"name": "CIMB Octo", "pkg": "com.cimb.cimbocto"},
+      {"name": "BIMB Mobile", "pkg": "com.bankislam.bimbmobile"},
+    ];
+
+    final installed = <Map<String, dynamic>>{};
+    for (final app in bankApps) {
+      final ok = await InstalledApps.isAppInstalled(app["pkg"] as String);
+      if (ok == true) {
+        installed.add(app);
+      } else if (app["alt"] != null) {
+        final altOk = await InstalledApps.isAppInstalled(app["alt"] as String);
+        if (altOk == true) installed.add(app);
+      }
+    }
+
+    if (!ctx.mounted) return;
+    showModalBottomSheet(
+      context: ctx,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+              ),
+              const SizedBox(height: 20),
+              Text("Buka Aplikasi Bank", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 16),
+              if (installed.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                    child: Text("Tiada app bank dijumpai", style: GoogleFonts.poppins(color: Colors.grey)),
+                  ),
+                )
+              else
+                ...installed.map((app) => ListTile(
+                      leading: Icon(Icons.account_balance, color: const Color(0xFF0D7377)),
+                      title: Text(app["name"]!, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500)),
+                      onTap: () async {
+                        Navigator.pop(context);
+                        try {
+                          await InstalledApps.startApp(app["pkg"]!);
+                        } catch (_) {
+                          if (app["alt"] != null) {
+                            try {
+                              await InstalledApps.startApp(app["alt"]!);
+                              return;
+                            } catch (_) {}
+                          }
+                          final uri = Uri.parse("market://details?id=${app["pkg"]}");
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          } else {
+                            final webUri = Uri.parse("https://play.google.com/store/apps/details?id=${app["pkg"]}");
+                            await launchUrl(webUri, mode: LaunchMode.externalApplication);
+                          }
+                        }
+                      },
+                    )),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildField({
@@ -1866,6 +2001,29 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                                     ],
                                   ),
                                 ),
+                                if (data["status"] == "menunggu_pembayaran") ...[
+                                  SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        final fare = double.tryParse(
+                                          (data["fare"] ?? data["total"] ?? "0").toString(),
+                                        ) ?? 0;
+                                        _showPaymentDialog(fare);
+                                      },
+                                      icon: const Icon(Icons.payments_rounded, size: 18),
+                                      label: Text("Bayar Sekarang", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFFCD34D),
+                                        foregroundColor: const Color(0xFF0D7377),
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                        elevation: 0,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                                 if (data["status"] == "on the way" ||
                                     data["status"] == "delivered") ...[
                                   SizedBox(height: 12),
@@ -1976,26 +2134,10 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                                     data["status"] != "pending" &&
                                     data["status"] != "delivered") ...[
                                   SizedBox(height: 10),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _actionButton(
-                                          icon: Icons.map,
-                                          label: "Lihat Laluan",
-                                          color: const Color(0xFF0D7377),
-                                          onTap: () => Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => TrackingMapScreen(
-                                                orderId: doc.id,
-                                                orderData: data,
-                                                riderUid: data["rider_uid"],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                  _ETAIndicator(
+                                    orderData: data,
+                                    riderUid: data["rider_uid"],
+                                    status: data["status"] ?? "",
                                   ),
                                 ],
                                 SizedBox(height: 12),
@@ -2130,6 +2272,144 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                 ),
               );
             }),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ETAIndicator extends StatefulWidget {
+  final Map<String, dynamic> orderData;
+  final String? riderUid;
+  final String status;
+  const _ETAIndicator({required this.orderData, this.riderUid, required this.status});
+  @override
+  State<_ETAIndicator> createState() => _ETAIndicatorState();
+}
+
+class _ETAIndicatorState extends State<_ETAIndicator> {
+  String _eta = "";
+  String _label = "";
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchETA();
+  }
+
+  bool _isOnWayToShop() {
+    return widget.status == "dijemput" || widget.status == "ambil barang";
+  }
+
+  bool _isDelivering() {
+    return widget.status == "dalam penghantaran";
+  }
+
+  Future<void> _fetchETA() async {
+    final d = widget.orderData;
+    final sLat = (d["shop_lat"] ?? 0).toDouble();
+    final sLng = (d["shop_lng"] ?? 0).toDouble();
+    final dropLat = (d["drop_lat"] ?? 0).toDouble();
+    final dropLng = (d["drop_lng"] ?? 0).toDouble();
+
+    if (_isOnWayToShop()) {
+      if (sLat == 0 || sLng == 0) {
+        if (mounted) setState(() { _loading = false; _eta = "-"; _label = "ETA ke kedai"; });
+        return;
+      }
+    } else if (_isDelivering()) {
+      if (dropLat == 0 || dropLng == 0) {
+        if (mounted) setState(() { _loading = false; _eta = "-"; _label = "ETA ke lokasi"; });
+        return;
+      }
+    } else {
+      if (mounted) setState(() { _loading = false; _eta = "-"; _label = ""; });
+      return;
+    }
+
+    try {
+      String routeCoords;
+      final uid = widget.riderUid;
+
+      if (_isOnWayToShop()) {
+        if (uid != null && uid.isNotEmpty) {
+          final riderDoc = await FirebaseFirestore.instance.collection("riders").doc(uid).get();
+          if (riderDoc.exists) {
+            final loc = riderDoc["current_location"];
+            if (loc is GeoPoint) {
+              routeCoords = "${loc.longitude},${loc.latitude};$sLng,$sLat";
+            } else {
+              routeCoords = "$sLng,$sLat";
+            }
+          } else {
+            routeCoords = "$sLng,$sLat";
+          }
+        } else {
+          routeCoords = "$sLng,$sLat";
+        }
+        _label = "ETA ke kedai";
+      } else {
+        routeCoords = "$sLng,$sLat;$dropLng,$dropLat";
+        _label = "ETA ke lokasi";
+      }
+
+      final res = await http.get(
+        Uri.parse("https://router.project-osrm.org/route/v1/driving/$routeCoords?overview=false"),
+      ).timeout(const Duration(seconds: 8));
+      if (res.statusCode == 200) {
+        final body = json.decode(res.body);
+        if (body["code"] == "Ok") {
+          final legs = body["routes"][0]["legs"] as List;
+          num totalSec = 0;
+          for (final leg in legs) {
+            totalSec += (leg["duration"] as num);
+          }
+          final min = (totalSec / 60 + 10).round();
+          if (mounted) setState(() { _eta = "$min min"; _loading = false; });
+          return;
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() { _eta = "-"; _loading = false; });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return Row(
+        children: [
+          const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0D7377))),
+          const SizedBox(width: 8),
+          Text("Anggaran masa...", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)),
+        ],
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D7377).withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            _isOnWayToShop() ? Icons.store_outlined : Icons.location_on_outlined,
+            size: 16,
+            color: const Color(0xFF0D7377),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            "$_label ~$_eta",
+            style: GoogleFonts.poppins(
+              fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF0D7377),
+            ),
+          ),
+          Text(
+            " (+10 min rizab)",
+            style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey.shade500),
           ),
         ],
       ),

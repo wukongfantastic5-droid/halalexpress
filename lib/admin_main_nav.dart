@@ -9,6 +9,7 @@ import 'admin_screen.dart';
 import 'announcement_screen.dart';
 import 'admin_feedback_screen.dart';
 import 'admin_rider_verify_screen.dart';
+import 'admin_wallet_screen.dart';
 import 'widgets/bunny_icon.dart';
 
 class AdminMainNav extends StatefulWidget {
@@ -27,7 +28,9 @@ class _AdminMainNavState extends State<AdminMainNav> {
     AnnouncementScreen(),
     const AdminFeedbackScreen(),
     AdminRiderVerifyScreen(),
+    const AdminWalletScreen(),
   ];
+
 
   @override
   void initState() {
@@ -142,6 +145,7 @@ class _AdminMainNavState extends State<AdminMainNav> {
                     _tab("Pengumuman", 2),
                     _tab("Maklum Balas", 3),
                     _tab("Rider", 4),
+                    _tab("Wallet", 5),
                   ],
                 ),
               ),

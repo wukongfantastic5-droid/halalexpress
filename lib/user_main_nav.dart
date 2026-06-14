@@ -37,15 +37,25 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
   final _formCardKey = GlobalKey();
   final _locationRowKey = GlobalKey();
   final _submitBtnKey = GlobalKey();
-  final _pesananTabKey = GlobalKey();
-  final _maklumatTabKey = GlobalKey();
-  final _historyTabKey = GlobalKey();
+
+  final _pesananIconKey = GlobalKey();
+  final _maklumatIconKey = GlobalKey();
+  final _feedbackIconKey = GlobalKey();
+  final _sejarahIconKey = GlobalKey();
+  final _profilIconKey = GlobalKey();
+  final _logoutKey = GlobalKey();
 
   late final List<TutorialStep> _tutorialSteps;
 
   late AnimationController _slideController;
 
   final firestore = FirebaseFirestore.instance;
+
+  late final Widget _pesananIcon;
+  late final Widget _maklumatIcon;
+  late final Widget _feedbackIcon;
+  late final Widget _sejarahIcon;
+  late final Widget _profilIcon;
 
   @override
   void initState() {
@@ -56,29 +66,41 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
     );
     _slideController.forward();
 
+    _pesananIcon = Container(
+      key: _pesananIconKey,
+      padding: EdgeInsets.all(8),
+      child: Icon(Icons.shopping_cart_rounded, size: 26),
+    );
+    _maklumatIcon = Container(
+      key: _maklumatIconKey,
+      padding: EdgeInsets.all(8),
+      child: Icon(Icons.campaign_rounded, size: 26),
+    );
+    _feedbackIcon = Container(
+      key: _feedbackIconKey,
+      padding: EdgeInsets.all(8),
+      child: Icon(Icons.feedback_outlined, size: 26),
+    );
+    _sejarahIcon = Container(
+      key: _sejarahIconKey,
+      padding: EdgeInsets.all(8),
+      child: Icon(Icons.history_rounded, size: 26),
+    );
+    _profilIcon = Container(
+      key: _profilIconKey,
+      padding: EdgeInsets.all(8),
+      child: Icon(Icons.person_outline_rounded, size: 26),
+    );
+
     _tutorialSteps = [
       TutorialStep(
-        targetKey: _formCardKey,
-        title: "Buat Pesanan",
-        description: "Isi borang pesanan dengan butiran barang yang ingin dibeli. Nyatakan barangan, nama kedai, dan butiran tambahan seperti alamat atau not khas.",
+        targetKey: _maklumatIconKey,
+        title: "Selamat Datang!",
+        description: "Anda telah log masuk sebagai Pelanggan. Ikuti tutorial ringkas ini untuk mengenali fungsi-fungsi utama aplikasi BunnyFresh.",
+        noSpotlight: true,
       ),
       TutorialStep(
-        targetKey: _locationRowKey,
-        title: "Pilih Lokasi",
-        description: "Masukkan alamat penghantaran anda atau tekan butang GPS untuk mengesan lokasi semasa secara automatik.",
-      ),
-      TutorialStep(
-        targetKey: _submitBtnKey,
-        title: "Hantar Pesanan",
-        description: "Selepas lengkap mengisi borang, tekan butang ini untuk menghantar pesanan kepada rider. Anda akan menerima notifikasi selepas pesanan diterima.",
-      ),
-      TutorialStep(
-        targetKey: _pesananTabKey,
-        title: "Pantau Pesanan",
-        description: "Tab ini membolehkan anda melihat status terkini pesanan anda, termasuk bila rider sedang dalam perjalanan untuk menghantar ke rumah anda.",
-      ),
-      TutorialStep(
-        targetKey: _maklumatTabKey,
+        targetKey: _maklumatIconKey,
         title: "Maklumat Terkini",
         description: "Semak halaman ini untuk sebarang pengumuman atau pemberitahuan terkini daripada pihak admin tentang perkhidmatan kami.",
         onStepEnter: () {
@@ -86,6 +108,41 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
             setState(() => index = 1);
           }
         },
+      ),
+      TutorialStep(
+        targetKey: _feedbackIconKey,
+        title: "Maklum Balas",
+        description: "Hantar maklum balas atau cadangan anda kepada pihak admin. Pandangan anda membantu kami memperbaiki perkhidmatan.",
+        onStepEnter: () {
+          if (index != 2) {
+            setState(() => index = 2);
+          }
+        },
+      ),
+      TutorialStep(
+        targetKey: _sejarahIconKey,
+        title: "Sejarah Pesanan",
+        description: "Lihat sejarah pesanan anda yang telah selesai. Anda boleh semak butiran pesanan lepas di sini.",
+        onStepEnter: () {
+          if (index != 3) {
+            setState(() => index = 3);
+          }
+        },
+      ),
+      TutorialStep(
+        targetKey: _profilIconKey,
+        title: "Profil Anda",
+        description: "Uruskan profil peribadi anda, termasuk nama, alamat, nombor telefon, dan tetapan gelap (dark mode).",
+        onStepEnter: () {
+          if (index != 4) {
+            setState(() => index = 4);
+          }
+        },
+      ),
+      TutorialStep(
+        targetKey: _logoutKey,
+        title: "Log Keluar",
+        description: "Tekan ikon ini untuk log keluar dari akaun anda bila-bila masa.",
       ),
     ];
 
@@ -199,7 +256,9 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
                   ),
                 ),
                 const Spacer(),
+                const SizedBox(width: 8),
                 IconButton(
+                  key: _logoutKey,
                   icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
                   tooltip: "Log keluar",
                   onPressed: () async {
@@ -271,161 +330,28 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
                 type: BottomNavigationBarType.fixed,
                 items: [
                   BottomNavigationBarItem(
-                    icon: Container(
-                      key: _pesananTabKey,
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: index == 0
-                            ? Color(0xFF0D7377).withOpacity(0.1)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        Icons.shopping_cart_rounded,
-                        size: 26,
-                        color: index == 0 ? Color(0xFF0D7377) : Colors.grey.shade500,
-                      ),
-                    ),
-                    activeIcon: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF0D7377).withOpacity(0.15), Color(0xFF14C38E).withOpacity(0.1)],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        Icons.shopping_cart_rounded,
-                        size: 26,
-                        color: Color(0xFF0D7377),
-                      ),
-                    ),
+                    icon: _pesananIcon,
+                    activeIcon: _pesananIcon,
                     label: "Pesanan",
                   ),
                   BottomNavigationBarItem(
-                    icon: Container(
-                      key: _maklumatTabKey,
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: index == 1
-                            ? Color(0xFF0D7377).withOpacity(0.1)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        Icons.campaign_rounded,
-                        size: 26,
-                        color: index == 1 ? Color(0xFF0D7377) : Colors.grey.shade500,
-                      ),
-                    ),
-                    activeIcon: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF0D7377).withOpacity(0.15), Color(0xFF14C38E).withOpacity(0.1)],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        Icons.campaign_rounded,
-                        size: 26,
-                        color: Color(0xFF0D7377),
-                      ),
-                    ),
+                    icon: _maklumatIcon,
+                    activeIcon: _maklumatIcon,
                     label: "Maklumat Terkini",
                   ),
                   BottomNavigationBarItem(
-                    icon: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: index == 2
-                            ? Color(0xFF0D7377).withOpacity(0.1)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        Icons.feedback_outlined,
-                        size: 26,
-                        color: index == 2 ? Color(0xFF0D7377) : Colors.grey.shade500,
-                      ),
-                    ),
-                    activeIcon: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF0D7377).withOpacity(0.15), Color(0xFF14C38E).withOpacity(0.1)],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        Icons.feedback_rounded,
-                        size: 26,
-                        color: Color(0xFF0D7377),
-                      ),
-                    ),
+                    icon: _feedbackIcon,
+                    activeIcon: _feedbackIcon,
                     label: "Maklum Balas",
                   ),
                   BottomNavigationBarItem(
-                    icon: Container(
-                      key: _historyTabKey,
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: index == 3
-                            ? Color(0xFF0D7377).withOpacity(0.1)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        Icons.history_rounded,
-                        size: 26,
-                        color: index == 3 ? Color(0xFF0D7377) : Colors.grey.shade500,
-                      ),
-                    ),
-                    activeIcon: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF0D7377).withOpacity(0.15), Color(0xFF14C38E).withOpacity(0.1)],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        Icons.history_rounded,
-                        size: 26,
-                        color: Color(0xFF0D7377),
-                      ),
-                    ),
+                    icon: _sejarahIcon,
+                    activeIcon: _sejarahIcon,
                     label: "Sejarah",
                   ),
                   BottomNavigationBarItem(
-                    icon: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: index == 4
-                            ? Color(0xFF0D7377).withOpacity(0.1)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        Icons.person_outline_rounded,
-                        size: 26,
-                        color: index == 4 ? Color(0xFF0D7377) : Colors.grey.shade500,
-                      ),
-                    ),
-                    activeIcon: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF0D7377).withOpacity(0.15), Color(0xFF14C38E).withOpacity(0.1)],
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        Icons.person_rounded,
-                        size: 26,
-                        color: Color(0xFF0D7377),
-                      ),
-                    ),
+                    icon: _profilIcon,
+                    activeIcon: _profilIcon,
                     label: "Profil",
                   ),
                 ],

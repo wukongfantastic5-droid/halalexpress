@@ -35,6 +35,22 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool loading = false;
   bool locating = false;
   String selectedRole = "customer";
+  String _bankType = "";
+  final _bankAccountCtrl = TextEditingController();
+  final List<String> _bankTypes = [
+    "CIMB Bank",
+    "Maybank",
+    "Bank Islam",
+    "Bank Rakyat",
+    "Public Bank",
+    "RHB Bank",
+    "Hong Leong Bank",
+    "AmBank",
+    "BSN",
+    "Affin Bank",
+    "OCBC Bank",
+    "Standard Chartered",
+  ];
 
   // Rider document images (bytes for cross-platform web/mobile)
   Uint8List? riderPhoto;
@@ -70,6 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     whatsapp.dispose();
     address.dispose();
     password.dispose();
+    _bankAccountCtrl.dispose();
     super.dispose();
   }
 
@@ -315,6 +332,16 @@ class _RegisterScreenState extends State<RegisterScreen>
           );
           return;
         }
+        if (_bankType.isEmpty || _bankAccountCtrl.text.trim().isEmpty) {
+          setState(() => loading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Sila pilih bank dan masukkan nombor akaun"),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
       }
 
       final existing = await firestore
@@ -398,6 +425,9 @@ class _RegisterScreenState extends State<RegisterScreen>
           "full_name": fullName.text.trim(),
           "whatsapp": whatsapp.text.trim(),
           "rider_verified": false,
+          "wallet_balance": 0.0,
+          "bank_type": _bankType,
+          "bank_account": _bankAccountCtrl.text.trim(),
           "created_at": Timestamp.now(),
         });
       }
@@ -1012,6 +1042,45 @@ class _RegisterScreenState extends State<RegisterScreen>
                                         if (f != null)
                                           setState(() => insurance = f);
                                       },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      "Maklumat Bank (Untuk Pengeluaran)",
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.9),
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                      child: DropdownButtonFormField<String>(
+                                        value: _bankType.isEmpty ? null : _bankType,
+                                        items: _bankTypes.map((b) => DropdownMenuItem(
+                                          value: b,
+                                          child: Text(b, style: GoogleFonts.poppins(fontSize: 13)),
+                                        )).toList(),
+                                        onChanged: (v) => setState(() => _bankType = v ?? ""),
+                                        decoration: InputDecoration(
+                                          border: InputBorder.none,
+                                          hintText: "Pilih Bank",
+                                          hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade500),
+                                        ),
+                                        dropdownColor: Colors.white,
+                                        style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF2E3A46)),
+                                        icon: const Icon(Icons.account_balance, color: Color(0xFF0D7377)),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    _buildField(
+                                      controller: _bankAccountCtrl,
+                                      label: "Nombor Akaun Bank",
+                                      icon: Icons.credit_card,
                                     ),
                                   ],
                                 ),

@@ -200,26 +200,37 @@ class _LoginScreenState extends State<LoginScreen>
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => AdminMainNav(),
+                              builder: (_) => const AdminMainNav(),
                             ),
                           );
                         } else if (role == "rider") {
+                          final riderDoc = await firestore.collection("riders").doc(uid).get();
+                          final riderShowTutorial = !(riderDoc.data()?["hasSeenTutorial"] ?? false);
+                          if (riderShowTutorial) {
+                            await firestore.collection("riders").doc(uid).set(
+                              {"hasSeenTutorial": true},
+                              SetOptions(merge: true),
+                            );
+                          }
+
+                          if (!context.mounted) return;
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const RiderMainNav(),
+                              builder: (_) => RiderMainNav(
+                                showTutorial: riderShowTutorial,
+                              ),
                             ),
                           );
                         } else {
-                          bool showTutorial = false;
-                          try {
-                            final userDoc = await firestore
-                                .collection("users")
-                                .doc(uid)
-                                .get();
-                            showTutorial =
-                                !(userDoc["hasSeenTutorial"] ?? false);
-                          } catch (_) {}
+                          final userDoc = await firestore.collection("users").doc(uid).get();
+                          final showTutorial = !(userDoc.data()?["hasSeenTutorial"] ?? false);
+                          if (showTutorial) {
+                            await firestore.collection("users").doc(uid).set(
+                              {"hasSeenTutorial": true},
+                              SetOptions(merge: true),
+                            );
+                          }
 
                           if (!context.mounted) return;
 

@@ -19,7 +19,7 @@ service cloud.firestore {
     // =========================
     match /riders/{riderId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == riderId;
+      allow write: if request.auth != null && (request.auth.uid == riderId || isAdmin());
     }
 
     // =========================
@@ -29,7 +29,8 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null
                     && request.resource.data.user_uid == request.auth.uid
-                    && request.resource.data.status == "pending";
+                    && (request.resource.data.status == "pending"
+                        || request.resource.data.status == "menunggu_pembayaran");
       allow update: if request.auth != null && (
         // admin can update anything
         isAdmin()
@@ -49,6 +50,26 @@ service cloud.firestore {
         (request.auth.uid == resource.data.user_uid
          && resource.data.status == "pending")
       );
+    }
+
+    // =========================
+    // RIDER BANK CHANGE REQUESTS
+    // =========================
+    match /rider_bank_requests/{docId} {
+      allow read: if request.auth != null && (request.auth.uid == resource.data.rider_id || isAdmin());
+      allow create: if request.auth != null && request.resource.data.rider_id == request.auth.uid;
+      allow update: if request.auth != null && isAdmin();
+      allow delete: if request.auth != null && isAdmin();
+    }
+
+    // =========================
+    // WITHDRAW REQUESTS
+    // =========================
+    match /withdraw_requests/{docId} {
+      allow read: if request.auth != null && (request.auth.uid == resource.data.rider_id || isAdmin());
+      allow create: if request.auth != null && request.resource.data.rider_id == request.auth.uid;
+      allow update: if request.auth != null && isAdmin();
+      allow delete: if request.auth != null && isAdmin();
     }
 
     // =========================
@@ -74,6 +95,16 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
       allow delete: if request.auth != null;
+    }
+
+    // =========================
+    // TOP-UP REQUESTS
+    // =========================
+    match /topup_requests/{docId} {
+      allow read: if request.auth != null && (request.auth.uid == resource.data.uid || isAdmin());
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow write: if request.auth != null && isAdmin();
+      allow delete: if request.auth != null && isAdmin();
     }
   }
 }

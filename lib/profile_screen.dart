@@ -114,6 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
+                    const SizedBox(height: 24),
                     Text(
                       "Tetapan",
                       style: GoogleFonts.poppins(

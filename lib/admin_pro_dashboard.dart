@@ -53,21 +53,23 @@ class _AdminProDashboardState extends State<AdminProDashboard> with TickerProvid
       final data = doc.data();
 
       double price = double.tryParse((data["fare"] ?? data["total"] ?? "0").toString()) ?? 0;
+      double commission = price * 0.2; // 20% admin commission
+      double riderShare = price * 0.8; // 80% rider share
 
       String status = data["status"] ?? "";
       String rider = data["rider"] ?? "unknown";
 
       if (status == "delivered") {
-        totalRevenue += price;
+        totalRevenue += commission;
 
         if (data["delivered_at"] != null) {
           DateTime d = (data["delivered_at"] as Timestamp).toDate();
-          monthlyIncome[d.month] = (monthlyIncome[d.month] ?? 0) + price;
+          monthlyIncome[d.month] = (monthlyIncome[d.month] ?? 0) + commission;
         }
 
         riderStats[rider] ??= RiderStats();
         riderStats[rider]!.completedOrders++;
-        riderStats[rider]!.totalEarnings += price;
+        riderStats[rider]!.totalEarnings += riderShare;
 
       } else if (status == "cancelled") {
         riderStats[rider] ??= RiderStats();

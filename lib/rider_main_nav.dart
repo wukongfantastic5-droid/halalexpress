@@ -6,14 +6,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'login_screen.dart';
 import 'admin_screen.dart';
 import 'history_order_screen.dart';
+import 'rider_wallet_screen.dart';
+import 'rider_profile_screen.dart';
 import 'widgets/bunny_icon.dart';
 import 'force_update_screen.dart';
+import 'tutorial_overlay.dart';
 
 class RiderMainNav extends StatefulWidget {
-  const RiderMainNav({super.key});
+  final bool showTutorial;
+
+  const RiderMainNav({super.key, this.showTutorial = false});
 
   @override
   State<RiderMainNav> createState() => _RiderMainNavState();
@@ -24,6 +31,14 @@ class _RiderMainNavState extends State<RiderMainNav> {
   String? riderUid;
   bool? _isVerified;
   bool _checking = true;
+  bool _showTutorial = false;
+
+  final _tab1Key = GlobalKey();
+  final _tab2Key = GlobalKey();
+  final _tab3Key = GlobalKey();
+  final _tab4Key = GlobalKey();
+  final _logoutKey = GlobalKey();
+  late final List<TutorialStep> _tutorialSteps;
 
   @override
   void initState() {
@@ -31,6 +46,52 @@ class _RiderMainNavState extends State<RiderMainNav> {
     riderUid = FirebaseAuth.instance.currentUser?.uid;
     _checkVerification();
     _checkUpdateFromGitHub();
+    _tutorialSteps = [
+      TutorialStep(
+        targetKey: _tab1Key,
+        title: "Selamat Datang!",
+        description: "Anda telah log masuk sebagai Rider. Ikuti tutorial ringkas ini untuk mengenali fungsi-fungsi utama aplikasi BunnyFresh.",
+        noSpotlight: true,
+      ),
+      TutorialStep(
+        targetKey: _tab1Key,
+        title: "Pesanan Aktif",
+        description: "Lihat dan urus pesanan yang tersedia. Ambil tugas baru dan kemas kini status penghantaran dari sini.",
+      ),
+      TutorialStep(
+        targetKey: _tab2Key,
+        title: "Sejarah",
+        description: "Semak sejarah pendapatan dan pesanan yang telah selesai. Anda juga boleh muat turun laporan pendapatan.",
+      ),
+      TutorialStep(
+        targetKey: _tab3Key,
+        title: "Dompet",
+        description: "Lihat baki dompet dan buat permohonan pengeluaran pendapatan.",
+      ),
+      TutorialStep(
+        targetKey: _tab4Key,
+        title: "Profil",
+        description: "Uruskan profil rider anda: nama, email, dokumen motor, kata laluan, dan maklumat bank.",
+      ),
+      TutorialStep(
+        targetKey: _logoutKey,
+        title: "Log Keluar",
+        description: "Tekan ikon ini untuk log keluar dari akaun rider anda bila-bila masa.",
+      ),
+    ];
+    if (widget.showTutorial) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() => _showTutorial = true);
+      });
+    }
+  }
+
+  Future<void> _markTutorialSeen() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    await FirebaseFirestore.instance.collection("riders").doc(uid).set({
+      "hasSeenTutorial": true,
+    }, SetOptions(merge: true));
   }
 
   Future<void> _checkVerification() async {
@@ -103,6 +164,8 @@ class _RiderMainNavState extends State<RiderMainNav> {
   List<Widget> get pages => [
     AdminScreen(isRider: true),
     HistoryOrderScreen(riderUid: riderUid),
+    const RiderWalletScreen(),
+    const RiderProfileScreen(),
   ];
 
   Widget _buildPendingVerification() {
@@ -187,98 +250,119 @@ class _RiderMainNavState extends State<RiderMainNav> {
       return _buildPendingVerification();
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 110,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF0D7377),
-                Color(0xFF14919B),
-                Color(0xFF14C38E),
-              ],
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
+            toolbarHeight: 110,
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF0D7377),
+                    Color(0xFF14919B),
+                    Color(0xFF14C38E),
+                  ],
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6, left: 16, right: 16),
+                    child: Row(
+                      children: [
+                        BunnyIcon(
+                          size: 36,
+                          color: Colors.white,
+                          accentColor: const Color(0xFF14C38E),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          "BunnyFresh Rider",
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          key: _logoutKey,
+                          icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
+                          tooltip: "Log keluar",
+                          onPressed: () async {
+                            await FirebaseAuth.instance.signOut();
+                            if (!context.mounted) return;
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (_) => LoginScreen()),
+                              (route) => false,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(left: 16, right: 16, bottom: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        _tab("Pesanan", 0),
+                        _tab("Sejarah", 1),
+                        _tab("Dompet", 2),
+                        _tab("Profil", 3),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
+            automaticallyImplyLeading: false,
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6, left: 16, right: 16),
-                child: Row(
-                  children: [
-                    BunnyIcon(
-                      size: 36,
-                      color: Colors.white,
-                      accentColor: const Color(0xFF14C38E),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      "BunnyFresh Rider",
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
-                      tooltip: "Log keluar",
-                      onPressed: () async {
-                        await FirebaseAuth.instance.signOut();
-                        if (!context.mounted) return;
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (_) => LoginScreen()),
-                          (route) => false,
-                        );
-                      },
-                    ),
-                  ],
-                ),
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFE8F5E9),
+                  Color(0xFFF1F8E9),
+                  Color(0xFFFFFDE7),
+                ],
               ),
-              Container(
-                margin: const EdgeInsets.only(left: 16, right: 16, bottom: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    _tab("Pesanan", 0),
-                    _tab("Sejarah", 1),
-                  ],
-                ),
-              ),
-            ],
+            ),
+            child: pages[index],
           ),
         ),
-        automaticallyImplyLeading: false,
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFE8F5E9),
-              Color(0xFFF1F8E9),
-              Color(0xFFFFFDE7),
-            ],
+        if (_showTutorial)
+          TutorialOverlay(
+            steps: _tutorialSteps,
+            onFinished: () {
+              _markTutorialSeen();
+              setState(() => _showTutorial = false);
+            },
+            onSkipped: () {
+              _markTutorialSeen();
+              setState(() => _showTutorial = false);
+            },
           ),
-        ),
-        child: pages[index],
-      ),
+      ],
     );
   }
 
   Widget _tab(String title, int i) {
     final bool isSelected = index == i;
+    final key = i == 0 ? _tab1Key : i == 1 ? _tab2Key : i == 2 ? _tab3Key : _tab4Key;
 
     return Expanded(
+      key: key,
       child: GestureDetector(
         onTap: () {
           setState(() {

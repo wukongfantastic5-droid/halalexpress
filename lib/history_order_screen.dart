@@ -74,6 +74,11 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
     super.dispose();
   }
 
+  double _riderShare(double fare) {
+    if (widget.riderUid == null) return fare;
+    return fare * 0.8;
+  }
+
   void calculateRevenue() {
     totalRevenue = 0;
     todayRevenue = 0;
@@ -84,6 +89,7 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
       final data = doc.data() as Map<String, dynamic>;
 
       double price = double.tryParse((data["fare"] ?? data["total"] ?? "0").toString()) ?? 0;
+      price = _riderShare(price);
 
       totalRevenue += price;
 
@@ -225,7 +231,7 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
           DateTime d = (data["delivered_at"] as Timestamp).toDate();
           dateText = "${d.day}/${d.month}/${d.year}";
         }
-        final fare = double.tryParse((data["fare"] ?? data["total"] ?? "0").toString()) ?? 0;
+        final fare = _riderShare(double.tryParse((data["fare"] ?? data["total"] ?? "0").toString()) ?? 0);
         sheet.appendRow([
           TextCellValue(data["shop_name"] ?? ""),
           TextCellValue(dateText),
@@ -415,7 +421,7 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "RM ${double.tryParse((data["fare"] ?? data["total"] ?? "0").toString())?.toStringAsFixed(2) ?? "0.00"}",
+                  "RM ${_riderShare(double.tryParse((data["fare"] ?? data["total"] ?? "0").toString()) ?? 0).toStringAsFixed(2)}",
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

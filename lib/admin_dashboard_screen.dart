@@ -258,12 +258,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
       double price =
           double.tryParse((data["fare"] ?? data["total"] ?? "0").toString()) ?? 0;
+      double commission = price * 0.2; // 20% admin commission
 
       String status = data["status"] ?? "";
       String rider = data["rider"] ?? "tidak diketahui";
 
       if (status == "delivered") {
-        totalRevenue += price;
+        totalRevenue += commission;
         completedOrders++;
 
         if (data["delivered_at"] != null) {
@@ -274,7 +275,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               "${d.year}-${d.month.toString().padLeft(2, '0')}";
 
           monthlyRevenue[monthKey] =
-              (monthlyRevenue[monthKey] ?? 0) + price;
+              (monthlyRevenue[monthKey] ?? 0) + commission;
         }
 
         riderPerformance[rider] =
@@ -343,12 +344,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           DateTime d = (data["delivered_at"] as Timestamp).toDate();
           dateText = "${d.day}/${d.month}/${d.year}";
         }
-        final fare = double.tryParse((data["fare"] ?? data["total"] ?? "0").toString()) ?? 0;
+        final commission = (double.tryParse((data["fare"] ?? data["total"] ?? "0").toString()) ?? 0) * 0.2;
         sheet.appendRow([
           TextCellValue(data["shop_name"] ?? ""),
           TextCellValue(dateText),
           TextCellValue((data["distance_km"] ?? "0").toString()),
-          DoubleCellValue(fare),
+          DoubleCellValue(commission),
           TextCellValue(data["rider_name"] ?? ""),
         ]);
       }
