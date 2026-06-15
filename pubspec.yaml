@@ -2,7 +2,7 @@ name: halalexpress
 description: "HalalExpress - Grocery Delivery App"
 publish_to: 'none'
 
-version: 1.0.17+14
+version: 1.0.18+15
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -98,6 +98,7 @@ flutter_launcher_icons:
   image_path: "assets/halalexpress.png"
   adaptive_icon_background: "#0D7377"
   adaptive_icon_foreground: "assets/halalexpress.png"
+
 
 
 
