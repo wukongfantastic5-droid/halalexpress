@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'translations.dart';
 
 class RiderWalletScreen extends StatefulWidget {
   const RiderWalletScreen({super.key});
@@ -33,7 +34,7 @@ class _RiderWalletScreenState extends State<RiderWalletScreen> {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _actionButton("Pengeluaran", Icons.arrow_upward, _showWithdrawDialog)),
+              Expanded(child: _actionButton(AppTranslations.get('Withdrawal'), Icons.arrow_upward, _showWithdrawDialog)),
             ],
           ),
           const SizedBox(height: 24),
@@ -64,7 +65,7 @@ class _RiderWalletScreenState extends State<RiderWalletScreen> {
           ),
           child: Column(
             children: [
-              Text("Baki Dompet", style: GoogleFonts.poppins(fontSize: 14, color: Colors.white70)),
+              Text(AppTranslations.get('Wallet Balance'), style: GoogleFonts.poppins(fontSize: 14, color: Colors.white70)),
               const SizedBox(height: 8),
               Text(
                 _formatRM((bal as num).toDouble()),
@@ -106,7 +107,7 @@ class _RiderWalletScreenState extends State<RiderWalletScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Maklumat bank tidak lengkap. Sila hubungi admin.", style: GoogleFonts.poppins()),
+            content: Text(AppTranslations.get('Bank info incomplete. Contact admin.'), style: GoogleFonts.poppins()),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -121,7 +122,7 @@ class _RiderWalletScreenState extends State<RiderWalletScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Pengeluaran", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF0D7377))),
+        title: Text(AppTranslations.get('Withdrawal'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: const Color(0xFF0D7377))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,7 +169,7 @@ class _RiderWalletScreenState extends State<RiderWalletScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              "Pengeluaran akan diproses dalam 1-3 hari bekerja.",
+              AppTranslations.get('Withdrawal will be processed in 1-3 business days.'),
               style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade500),
             ),
           ],
@@ -176,14 +177,14 @@ class _RiderWalletScreenState extends State<RiderWalletScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey)),
+            child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () {
               final v = double.tryParse(ctrl.text.trim());
               Navigator.pop(ctx, v);
             },
-            child: Text("Hantar", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600)),
+            child: Text(AppTranslations.get('Submit Withdrawal'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -192,7 +193,7 @@ class _RiderWalletScreenState extends State<RiderWalletScreen> {
     if (result == null || result <= 0 || result > balance) {
       if (result != null && result > balance && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Jumlah melebihi baki", style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text(AppTranslations.get('Insufficient balance'), style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
         );
       }
       return;
@@ -250,7 +251,7 @@ class _RiderWalletScreenState extends State<RiderWalletScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Center(
-              child: Text("Tiada pengeluaran", style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade500)),
+              child: Text(AppTranslations.get('No withdrawals'), style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade500)),
             ),
           );
         }
@@ -258,7 +259,7 @@ class _RiderWalletScreenState extends State<RiderWalletScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Pengeluaran Terdahulu", style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF0D7377))),
+            Text(AppTranslations.get('Previous Withdrawals'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF0D7377))),
             const SizedBox(height: 12),
             ...docs.map((doc) {
               final d = doc.data() as Map<String, dynamic>;
@@ -280,15 +281,15 @@ class _RiderWalletScreenState extends State<RiderWalletScreen> {
               switch (status) {
                 case "approved":
                   statusColor = const Color(0xFF14C38E);
-                  statusText = "Disahkan";
+                  statusText = AppTranslations.get('Approved');
                   break;
                 case "rejected":
                   statusColor = Colors.red;
-                  statusText = "Ditolak";
+                  statusText = AppTranslations.get('Rejected');
                   break;
                 default:
                   statusColor = const Color(0xFFFFA000);
-                  statusText = "Menunggu";
+                  statusText = AppTranslations.get('Pending');
               }
 
               return Container(
@@ -324,7 +325,7 @@ class _RiderWalletScreenState extends State<RiderWalletScreen> {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text("Tarikh: $dateStr", style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade500)),
+                    Text("${AppTranslations.get('Date:')} $dateStr", style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade500)),
                     if (resolvedStr != null)
                       Text("Siap: $resolvedStr", style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade500)),
                     Text("${d["bank_type"] ?? "-"} - ${d["bank_account"] ?? "-"}", style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade500)),

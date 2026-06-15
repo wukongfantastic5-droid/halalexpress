@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'history_order_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +16,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'tracking_map_screen.dart';
+import 'translations.dart';
 import 'widgets/order_timeline.dart';
 
 class AdminScreen extends StatefulWidget {
@@ -45,16 +47,27 @@ class _AdminScreenState extends State<AdminScreen> {
   StreamSubscription? _ordersSub;
   List<QueryDocumentSnapshot>? _lastOrdersSnapshot;
 
+  // Admin filter & sound state
+  String? _statusFilter;
+  Set<String> _previousOrderIds = {};
+  bool _hasPlayedNewOrderSound = false;
+
   @override
   void initState() {
     super.initState();
+    AppTranslations.languageNotifier.addListener(_onLangChange);
     _startProximityCheck();
     _listenRiderVerification();
     _listenOrders();
   }
 
+  void _onLangChange() {
+    if (mounted) setState(() {});
+  }
+
   @override
   void dispose() {
+    AppTranslations.languageNotifier.removeListener(_onLangChange);
     _proximityTimer?.cancel();
     _riderVerificationSub?.cancel();
     _ordersSub?.cancel();
@@ -288,7 +301,7 @@ class _AdminScreenState extends State<AdminScreen> {
       final fare = double.tryParse(
         (d["fare"] ?? d["total"] ?? "0").toString(),
       ) ?? 0;
-      final shop = d["shop_name"] ?? "Kedai";
+      final shop = d["shop_name"] ?? AppTranslations.get('Shop');
       final dist = _shopDistances[e.key];
       return _BatchOrderInfo(
         orderId: e.key,
@@ -354,7 +367,7 @@ class _AdminScreenState extends State<AdminScreen> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      "Sila tunggu...",
+                      AppTranslations.get('Please wait...'),
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -363,7 +376,7 @@ class _AdminScreenState extends State<AdminScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Pesanan sedang diproses",
+                      AppTranslations.get('Order is being processed'),
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         color: Colors.grey.shade500,
@@ -373,8 +386,8 @@ class _AdminScreenState extends State<AdminScreen> {
                 ),
               ),
             ),
-      ),
-    );
+          ),
+        );
       }
 
       final acceptOk = await _acceptBatch(offeredOrders, currentUser);
@@ -501,7 +514,6 @@ class _AdminScreenState extends State<AdminScreen> {
     } catch (e) {
       _isAcceptingBatch = false;
       if (mounted) setState(() {});
-      debugPrint("Accept batch error: $e");
       return false;
     }
   }
@@ -567,17 +579,17 @@ class _AdminScreenState extends State<AdminScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _detailRow("Barang Runcit", _fmtItems(data)),
+                      _detailRow(AppTranslations.get('Groceries'), _fmtItems(data)),
                       const SizedBox(height: 8),
-                      _detailRow("Kedai", data["shop_name"] ?? ""),
+                      _detailRow(AppTranslations.get('Shop'), data["shop_name"] ?? ""),
                       const SizedBox(height: 8),
-                      _detailRow("Butiran", data["details"] ?? ""),
+                      _detailRow(AppTranslations.get('Details'), data["details"] ?? ""),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "Adakah anda pasti mahu mengambil tugas ini?",
+                  AppTranslations.get('Take this job?'),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 13,
@@ -598,7 +610,7 @@ class _AdminScreenState extends State<AdminScreen> {
                           ),
                         ),
                         child: Text(
-                          "Batal",
+                          AppTranslations.get('Cancel'),
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF0D7377),
@@ -855,7 +867,7 @@ class _AdminScreenState extends State<AdminScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => _LoadingDialog(message: "Dalam Proses..."),
+      builder: (_) => _LoadingDialog(message: AppTranslations.get('Processing...')),
     );
 
     String cleanPhone = phone
@@ -887,7 +899,7 @@ class _AdminScreenState extends State<AdminScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (_) => const _LoadingDialog(message: "Sila tunggu pengambilan barang tugas dalam proses..."),
+          builder: (_) => _LoadingDialog(message: AppTranslations.get('Please wait, processing...')),
         );
 
         await Future.delayed(
@@ -959,7 +971,7 @@ class _AdminScreenState extends State<AdminScreen> {
                             ),
                             onPressed: () => Navigator.pop(context, false),
                             child: Text(
-                              "No",
+                              AppTranslations.get('No'),
                               style: GoogleFonts.poppins(color: Colors.grey.shade600),
                             ),
                           ),
@@ -976,7 +988,7 @@ class _AdminScreenState extends State<AdminScreen> {
                             ),
                             onPressed: () => Navigator.pop(context, true),
                             child: Text(
-                              "Yes",
+                              AppTranslations.get('Yes'),
                               style: GoogleFonts.poppins(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
@@ -1046,7 +1058,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        "Barang Diambil",
+                        AppTranslations.get('Mark Picked Up').replaceAll("!", ""),
                         style: GoogleFonts.poppins(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -1055,7 +1067,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        "Gambar bukti pengambilan telah berjaya dihantar kepada pelanggan.",
+                        AppTranslations.get('Pickup proof image sent to customer.'),
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
@@ -1075,7 +1087,7 @@ class _AdminScreenState extends State<AdminScreen> {
                           ),
                           onPressed: () => Navigator.pop(context),
                           child: Text(
-                            "Selesai",
+                            AppTranslations.get('Completed'),
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               color: Colors.white,
@@ -1107,7 +1119,7 @@ class _AdminScreenState extends State<AdminScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const _LoadingDialog(message: "Sila Tunggu Dalam Proses..."),
+      builder: (_) => _LoadingDialog(message: AppTranslations.get('Please wait, processing...')),
     );
 
     LocationPermission permission =
@@ -1124,7 +1136,7 @@ class _AdminScreenState extends State<AdminScreen> {
         if (context.mounted) Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Kebenaran lokasi ditolak"),
+            content: Text(AppTranslations.get('Location permission denied')),
             backgroundColor: Colors.red,
           ),
         );
@@ -1192,7 +1204,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    "Lokasi Salah",
+                    AppTranslations.get('Wrong Location'),
                     style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -1278,7 +1290,7 @@ class _AdminScreenState extends State<AdminScreen> {
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (_) => const _LoadingDialog(message: "Sila tunggu penghantaran barang dalam proses..."),
+          builder: (_) => _LoadingDialog(message: AppTranslations.get('Please wait, processing...')),
         );
 
         await Future.delayed(
@@ -1367,7 +1379,7 @@ class _AdminScreenState extends State<AdminScreen> {
                             ),
                             onPressed: () => Navigator.pop(context, true),
                             child: Text(
-                              "Ya",
+                              AppTranslations.get('Yes'),
                               style: GoogleFonts.poppins(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
@@ -1391,6 +1403,7 @@ class _AdminScreenState extends State<AdminScreen> {
               .update({
             "status": "delivered",
             "delivered_at": Timestamp.now(),
+            "pending_rating": true,
           });
 
           final currentUser = FirebaseAuth.instance.currentUser;
@@ -1461,7 +1474,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        "Penghantaran Selesai",
+                        AppTranslations.get('Delivery Complete'),
                         style: GoogleFonts.poppins(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -1470,7 +1483,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        "Penghantaran berjaya diselesaikan.",
+                        AppTranslations.get('Delivery completed successfully.'),
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
@@ -1515,18 +1528,58 @@ class _AdminScreenState extends State<AdminScreen> {
   String _statusLabel(String status) {
     switch (status) {
       case "pending":
-        return "Menunggu";
+        return AppTranslations.get('Pending');
       case "menunggu_pembayaran":
-        return "Menunggu Bayaran";
+        return AppTranslations.get('Awaiting Payment');
       case "accepted":
-        return "Dijemput";
+        return AppTranslations.get('Picked Up');
       case "on the way":
-        return "Dalam Perjalanan";
+        return AppTranslations.get('In Transit');
       case "delivered":
-        return "Selesai";
+        return AppTranslations.get('Completed');
       default:
         return status;
     }
+  }
+
+  String _formatTimestamp(dynamic ts) {
+    if (ts == null) return "";
+    try {
+      final date = (ts as Timestamp).toDate();
+      final now = DateTime.now();
+      final diff = now.difference(date);
+      if (diff.inMinutes < 1) return AppTranslations.get('Just now');
+      if (diff.inMinutes < 60) return "${diff.inMinutes} ${AppTranslations.get('minutes ago')}";
+      if (diff.inHours < 24) return "${diff.inHours} ${AppTranslations.get('hours ago')}";
+      return DateFormat("dd/MM/yyyy hh:mm a").format(date);
+    } catch (_) {
+      return "";
+    }
+  }
+
+  Widget _filterChip(String label, String? status) {
+    final active = _statusFilter == status;
+    return GestureDetector(
+      onTap: () => setState(() => _statusFilter = active ? null : status),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: active
+              ? const LinearGradient(colors: [Color(0xFF0D7377), Color(0xFF14C38E)])
+              : null,
+          color: active ? null : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+            color: active ? Colors.white : Colors.grey.shade700,
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _approvePayment(String orderId) async {
@@ -1534,11 +1587,11 @@ class _AdminScreenState extends State<AdminScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Sahkan Bayaran", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Text("Bayaran telah diterima? Pesanan akan menjadi aktif untuk rider.", style: GoogleFonts.poppins(fontSize: 13)),
+        title: Text(AppTranslations.get('Confirm Payment'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text(AppTranslations.get('Has payment been received? Order will become active for riders.'), style: GoogleFonts.poppins(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Sahkan", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppTranslations.get('Confirm'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -1550,7 +1603,7 @@ class _AdminScreenState extends State<AdminScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Bayaran disahkan. Pesanan kini aktif.", style: GoogleFonts.poppins()), backgroundColor: const Color(0xFF14C38E), behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text(AppTranslations.get('Payment confirmed. Order is now active.'), style: GoogleFonts.poppins()), backgroundColor: const Color(0xFF14C38E), behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
@@ -1581,7 +1634,7 @@ class _AdminScreenState extends State<AdminScreen> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Resit berjaya dimuat naik"),
+          content: Text("Resit ${AppTranslations.get('Upload Receipt')}"),
           backgroundColor: const Color(0xFF14C38E),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1592,51 +1645,129 @@ class _AdminScreenState extends State<AdminScreen> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Gagal memuat naik resit"),
+          content: Text("${AppTranslations.get('Failed')} ${AppTranslations.get('Upload Receipt')}"),
           backgroundColor: Colors.red,
         ),
       );
     }
   }
 
-  void _openBatchRoute(List<QueryDocumentSnapshot> allOrders) {
+  Future<void> _openBatchRoute(List<QueryDocumentSnapshot> allOrders) async {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? "";
+
+    // Get rider's current location
+    Position? riderPos;
+    try {
+      riderPos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+    } catch (_) {
+      riderPos = null;
+    }
+
+    if (riderPos == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Gagal dapatkan lokasi semasa"),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Collect all active stops for this rider
     final stops = <Map<String, dynamic>>[];
     for (final doc in allOrders) {
       final d = doc.data() as Map<String, dynamic>;
       final rider = d["rider_uid"]?.toString() ?? "";
-      final currentUid = FirebaseAuth.instance.currentUser?.uid ?? "";
       if (rider != currentUid) continue;
+      if (d["status"] == "delivered") continue;
       final sLat = (d["shop_lat"] ?? 0).toDouble();
       final sLng = (d["shop_lng"] ?? 0).toDouble();
       final dLat = (d["drop_lat"] ?? 0).toDouble();
       final dLng = (d["drop_lng"] ?? 0).toDouble();
       if (sLat != 0 && sLng != 0) {
         stops.add({
-          "name": "Ambil: ${d["shop_name"] ?? "Kedai"}",
+          "name": "${AppTranslations.get('Pickup:')} ${d["shop_name"] ?? AppTranslations.get('Shop')}",
           "lat": sLat,
           "lng": sLng,
         });
       }
       if (dLat != 0 && dLng != 0) {
         stops.add({
-          "name": "Hantar: ${d["drop"] ?? "Pelanggan"}",
+          "name": "${AppTranslations.get('Deliver:')} ${d["drop"] ?? AppTranslations.get('Customer')}",
           "lat": dLat,
           "lng": dLng,
         });
       }
     }
+
     if (stops.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text("Tiada tugasan aktif untuk route"),
-          backgroundColor: Colors.orange,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppTranslations.get('No active tasks for route')),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
       return;
     }
-    // Sort: pickups first, then drop-offs (nearest first)
+
+    // Call OSRM Trip API with rider location as origin
+    final coordsStr = "${riderPos.longitude},${riderPos.latitude};" +
+        stops.map((s) => "${s["lng"]},${s["lat"]}").join(";");
+
+    try {
+      final res = await http
+          .get(Uri.parse(
+              "https://router.project-osrm.org/trip/v1/driving/$coordsStr?source=first&roundtrip=false&steps=false"))
+          .timeout(const Duration(seconds: 15));
+
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+        final waypoints = body["waypoints"] as List;
+
+        // waypoints are returned in optimal visiting order
+        // first waypoint (index 0) = rider's current location
+        // remaining waypoints = stops in optimized order
+        final orderedStops = <Map<String, dynamic>>[];
+        for (int i = 1; i < waypoints.length; i++) {
+          final wpIndex = waypoints[i]["waypoint_index"] as int;
+          final stopIndex = wpIndex - 1;
+          if (stopIndex >= 0 && stopIndex < stops.length) {
+            orderedStops.add(stops[stopIndex]);
+          }
+        }
+
+        if (orderedStops.length >= 2) {
+          final origin = "${riderPos.longitude},${riderPos.latitude}";
+          final dest = "${orderedStops.last["lng"]},${orderedStops.last["lat"]}";
+          final waypointsStr = orderedStops.length > 2
+              ? orderedStops
+                  .sublist(0, orderedStops.length - 1)
+                  .map((s) => "${s["lng"]},${s["lat"]}")
+                  .join("|")
+              : "";
+          final mapUrl = waypointsStr.isNotEmpty
+              ? "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$dest&waypoints=$waypointsStr&travelmode=driving"
+              : "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$dest&travelmode=driving";
+          await launchUrl(Uri.parse(mapUrl), mode: LaunchMode.externalApplication);
+          return;
+        }
+      }
+    } catch (_) {}
+
+    // Fallback: pickups first, drop-offs last (no OSRM optimization)
     stops.sort((a, b) {
       if (a["name"].toString().startsWith("Ambil") &&
           !b["name"].toString().startsWith("Ambil")) return -1;
@@ -1644,16 +1775,39 @@ class _AdminScreenState extends State<AdminScreen> {
           b["name"].toString().startsWith("Ambil")) return 1;
       return 0;
     });
-    // Build Google Maps URL with waypoints
     final origin = "${stops.first["lng"]},${stops.first["lat"]}";
     final dest = "${stops.last["lng"]},${stops.last["lat"]}";
-    final waypoints = stops.length > 2
+    final waypointsStr = stops.length > 2
         ? stops.sublist(1, stops.length - 1).map((s) => "${s["lng"]},${s["lat"]}").join("|")
         : "";
-    final url = waypoints.isNotEmpty
-        ? "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$dest&waypoints=$waypoints&travelmode=driving"
+    final mapUrl = waypointsStr.isNotEmpty
+        ? "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$dest&waypoints=$waypointsStr&travelmode=driving"
         : "https://www.google.com/maps/dir/?api=1&origin=$origin&destination=$dest&travelmode=driving";
-    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication).catchError((_) => false);
+    await launchUrl(Uri.parse(mapUrl), mode: LaunchMode.externalApplication);
+  }
+
+  String _riderFareText(Map<String, dynamic> orderData, List<QueryDocumentSnapshot> allOrders) {
+    final batchId = orderData["batch_id"];
+    final riderUid = orderData["rider_uid"]?.toString() ?? "";
+    double totalFare = 0;
+    int count = 0;
+    if (batchId != null) {
+      for (final doc in allOrders) {
+        final d = doc.data() as Map<String, dynamic>;
+        if ((d["batch_id"] ?? "").toString() == batchId.toString() &&
+            (d["rider_uid"] ?? "").toString() == riderUid) {
+          final fare = double.tryParse((d["fare"] ?? d["total"] ?? "0").toString()) ?? 0;
+          totalFare += fare;
+          count++;
+        }
+      }
+    }
+    if (count == 0) {
+      final fare = double.tryParse((orderData["fare"] ?? orderData["total"] ?? "0").toString()) ?? 0;
+      totalFare = fare;
+    }
+    final riderAmount = totalFare * 0.8;
+    return "RM ${riderAmount.toStringAsFixed(2)}";
   }
 
   void _showReceiptDialog(String imageUrl) {
@@ -1710,6 +1864,23 @@ class _AdminScreenState extends State<AdminScreen> {
           }
 
           final allOrders = snapshot.data!.docs;
+
+          // Sound notification for admin on new orders
+          if (!widget.isRider) {
+            final currentIds = allOrders.map((doc) => doc.id).toSet();
+            if (_previousOrderIds.isNotEmpty) {
+              final newIds = currentIds.difference(_previousOrderIds);
+              if (newIds.isNotEmpty && !_hasPlayedNewOrderSound) {
+                _hasPlayedNewOrderSound = true;
+                player.stop();
+                player.play(AssetSource("notification.mp3"));
+                Future.delayed(const Duration(seconds: 3), () {
+                  if (mounted) _hasPlayedNewOrderSound = false;
+                });
+              }
+            }
+            _previousOrderIds = currentIds;
+          }
 
           // Sync active order count: self-heal from actual orders
           if (widget.isRider) {
@@ -1788,7 +1959,25 @@ class _AdminScreenState extends State<AdminScreen> {
               return false;
             });
           } else {
-            filtered = allOrders;
+            // Admin: sort menunggu_pembayaran first, newest first within each group
+            final sorted = allOrders.toList()..sort((a, b) {
+              final sa = (a.data() as Map<String, dynamic>)["status"] ?? "";
+              final sb = (b.data() as Map<String, dynamic>)["status"] ?? "";
+              if (sa == "menunggu_pembayaran" && sb != "menunggu_pembayaran") return -1;
+              if (sa != "menunggu_pembayaran" && sb == "menunggu_pembayaran") return 1;
+              final aa = (a.data() as Map<String, dynamic>)["created_at"] as Timestamp?;
+              final bb = (b.data() as Map<String, dynamic>)["created_at"] as Timestamp?;
+              if (aa != null && bb != null) return bb.toDate().compareTo(aa.toDate());
+              return 0;
+            });
+            if (_statusFilter != null) {
+              filtered = sorted.where((doc) {
+                final d = doc.data() as Map<String, dynamic>;
+                return d["status"] == _statusFilter;
+              });
+            } else {
+              filtered = sorted;
+            }
           }
 
           final orders = _searchQuery.isEmpty
@@ -1812,7 +2001,7 @@ class _AdminScreenState extends State<AdminScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Pesanan Aktif",
+                          AppTranslations.get('Active Orders'),
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
@@ -1821,7 +2010,7 @@ class _AdminScreenState extends State<AdminScreen> {
                         ),
                         if (widget.isRider)
                           Text(
-                            "Tugas saya: $_activeOrderCount / 3",
+                            "${AppTranslations.get('My tasks:')} $_activeOrderCount / 3",
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               color: _activeOrderCount >= 3
@@ -1882,7 +2071,7 @@ class _AdminScreenState extends State<AdminScreen> {
                   onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
                   style: GoogleFonts.poppins(color: Colors.white, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: "Cari kedai / pelanggan...",
+                    hintText: AppTranslations.get('Search shop / customer...'),
                     hintStyle: GoogleFonts.poppins(color: Colors.white60, fontSize: 14),
                     prefixIcon: const Icon(Icons.search, color: Colors.white60, size: 20),
                     filled: true,
@@ -1903,6 +2092,26 @@ class _AdminScreenState extends State<AdminScreen> {
                   ),
                 ),
               ),
+              if (!widget.isRider)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _filterChip(AppTranslations.get('All'), null),
+                        const SizedBox(width: 8),
+                        _filterChip(AppTranslations.get('Awaiting Payment'), "menunggu_pembayaran"),
+                        const SizedBox(width: 8),
+                        _filterChip(AppTranslations.get('Pending'), "pending"),
+                        const SizedBox(width: 8),
+                        _filterChip(AppTranslations.get('Picked Up'), "accepted"),
+                        const SizedBox(width: 8),
+                        _filterChip(AppTranslations.get('In Transit'), "on the way"),
+                      ],
+                    ),
+                  ),
+                ),
               Expanded(
                 child: orders.isEmpty
                     ? Center(
@@ -1912,13 +2121,13 @@ class _AdminScreenState extends State<AdminScreen> {
                             if (_isAcceptingBatch) ...[
                               CircularProgressIndicator(color: const Color(0xFF0D7377)),
                               SizedBox(height: 12),
-                              Text("Memproses...",
+                              Text(AppTranslations.get('Processing...'),
                                 style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey.shade500),
                               ),
                             ] else ...[
                               Icon(Icons.inbox, size: 64, color: Colors.grey.shade300),
                               const SizedBox(height: 12),
-                              Text("Tiada pesanan aktif",
+                              Text(AppTranslations.get('No active orders'),
                                 style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey.shade400),
                               ),
                             ],
@@ -2031,7 +2240,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              "Pesanan Pelanggan",
+                                              AppTranslations.get("Customer's Order"),
                                               style: GoogleFonts.poppins(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w600,
@@ -2111,6 +2320,31 @@ class _AdminScreenState extends State<AdminScreen> {
                                       ),
                                     ],
                                   ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.access_time, size: 13, color: Colors.grey.shade400),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        _formatTimestamp(data["created_at"]),
+                                        style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade500),
+                                      ),
+                                      const Spacer(),
+                                      if ((data["distance_km"] ?? "").toString().isNotEmpty &&
+                                          (data["distance_km"] ?? "").toString() != "0")
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.straighten, size: 13, color: Colors.grey.shade400),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              "${data["distance_km"]} km",
+                                              style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade500),
+                                            ),
+                                          ],
+                                        ),
+                                    ],
+                                  ),
                                   const SizedBox(height: 14),
                                   Container(
                                     padding: const EdgeInsets.all(14),
@@ -2120,13 +2354,13 @@ class _AdminScreenState extends State<AdminScreen> {
                                     ),
                                     child: Column(
                                       children: [
-                                        _infoRow(Icons.shopping_cart, "Barang Runcit", _fmtItems(data)),
+                                        _infoRow(Icons.shopping_cart, AppTranslations.get('Groceries'), _fmtItems(data)),
                                         const SizedBox(height: 6),
-                                        _infoRow(Icons.store, "Kedai", data["shop_name"] ?? ""),
+                                        _infoRow(Icons.store, AppTranslations.get('Shop'), data["shop_name"] ?? ""),
                                         const SizedBox(height: 6),
-                                        _infoRow(Icons.description, "Butiran", data["details"] ?? ""),
+                                        _infoRow(Icons.description, AppTranslations.get('Details'), data["details"] ?? ""),
                                         const SizedBox(height: 6),
-                                        _infoRow(Icons.location_on, "Lokasi Hantar", data["drop"] ?? ""),
+                                        _infoRow(Icons.location_on, AppTranslations.get('Delivery Location'), data["drop"] ?? ""),
                                         const SizedBox(height: 10),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -2159,7 +2393,11 @@ class _AdminScreenState extends State<AdminScreen> {
                                                   crossAxisAlignment: CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
-                                                      "Tambang",
+                                                      widget.isRider
+                                                          ? (data["batch_id"] != null
+                                                              ? AppTranslations.get('Total Earnings')
+                                                              : AppTranslations.get('My Earnings'))
+                                                          : AppTranslations.get('Fare'),
                                                       style: GoogleFonts.poppins(
                                                         fontSize: 12,
                                                         color: Colors.white.withOpacity(0.8),
@@ -2168,9 +2406,11 @@ class _AdminScreenState extends State<AdminScreen> {
                                                     ),
                                                     const SizedBox(height: 2),
                                                     Text(
-                                                      "RM ${double.tryParse((data["fare"] ?? data["total"] ?? "0").toString())?.toStringAsFixed(2) ?? "0.00"}",
+                                                      widget.isRider
+                                                          ? _riderFareText(data, allOrders)
+                                                          : "RM ${double.tryParse((data["fare"] ?? data["total"] ?? "0").toString())?.toStringAsFixed(2) ?? "0.00"}",
                                                       style: GoogleFonts.poppins(
-                                                        fontSize: 22,
+                                                        fontSize: widget.isRider && data["batch_id"] != null ? 18 : 22,
                                                         color: Colors.white,
                                                         fontWeight: FontWeight.bold,
                                                       ),
@@ -2206,15 +2446,15 @@ class _AdminScreenState extends State<AdminScreen> {
                                           ),
                                         ),
                                         const SizedBox(height: 6),
-                                        _infoRow(Icons.chat, "WhatsApp",
+                                        _infoRow(Icons.chat, AppTranslations.get('WhatsApp'),
                                             userPhone.isEmpty ? "Tiada no telefon" : userPhone,
                                             valueColor: const Color(0xFF0D7377)),
                                         const SizedBox(height: 6),
-                                        _infoRow(Icons.delivery_dining, "Rider", data["rider"] ?? "none"),
+                                        _infoRow(Icons.delivery_dining, AppTranslations.get('Rider'), data["rider"] ?? "none"),
                                         if (widget.isRider && _shopDistances.containsKey(doc.id))
                                           _infoRow(
                                             Icons.near_me,
-                                            "Jarak Saya",
+                                            AppTranslations.get('My Distance'),
                                             "${_shopDistances[doc.id]!.toStringAsFixed(1)} km dari kedai",
                                             valueColor: _shopDistances[doc.id]! <= 3.0
                                                 ? const Color(0xFF14C38E)
@@ -2233,8 +2473,8 @@ class _AdminScreenState extends State<AdminScreen> {
                                       if ((data["status"] ?? "") == "pending" && widget.isRider)
                                         _actionButton(
                                           label: _activeOrderCount >= 3
-                                              ? "Tugas Penuh"
-                                              : "Ambil Tugas",
+                                              ? AppTranslations.get('Full Load')
+                                              : AppTranslations.get('Accept Job'),
                                           icon: Icons.handshake,
                                           color1: _activeOrderCount >= 3
                                               ? Colors.grey
@@ -2248,7 +2488,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                         ),
                                       if ((data["status"] ?? "") == "menunggu_pembayaran" && !widget.isRider)
                                         _actionButton(
-                                          label: "Sahkan Bayaran",
+                                          label: AppTranslations.get('Confirm Payment'),
                                           icon: Icons.verified,
                                           color1: const Color(0xFF14C38E),
                                           color2: const Color(0xFF0D7377),
@@ -2276,7 +2516,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                           status: data["status"] ?? "",
                                         ),
                                         _actionButton(
-                                          label: "Sudah Ambil",
+                                          label: AppTranslations.get('Mark Picked Up'),
                                           icon: Icons.shopping_bag,
                                           color1: _nearShop[doc.id] == true
                                               ? const Color(0xFF6366F1)
@@ -2296,7 +2536,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                         ),
                                       ],
                                       _actionButton(
-                                        label: "WhatsApp",
+                                        label: AppTranslations.get('WhatsApp'),
                                         icon: Icons.chat,
                                         color1: const Color(0xFF14C38E),
                                         color2: const Color(0xFF0D7377),
@@ -2322,7 +2562,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                                 ),
                                               )
                                             : _actionButton(
-                                                label: "Resit Kedai",
+                                                label: AppTranslations.get('Store Receipt'),
                                                 icon: Icons.receipt_long,
                                                 color1: const Color(0xFFF59E0B),
                                                 color2: const Color(0xFFFBBF24),
@@ -2350,7 +2590,7 @@ class _AdminScreenState extends State<AdminScreen> {
                                           status: data["status"] ?? "",
                                         ),
                                         _actionButton(
-                                          label: "Selesaikan",
+                                          label: AppTranslations.get('Complete'),
                                           icon: Icons.check_circle,
                                           color1: _nearDrop[doc.id] == true
                                               ? const Color(0xFF14C38E)
@@ -2487,7 +2727,7 @@ class _BatchOfferDialogState extends State<_BatchOfferDialog>
   final AudioPlayer _alertPlayer = AudioPlayer();
   Timer? _vibrationTimer;
   bool _isAccepting = false;
-  static const _vibrateChannel = MethodChannel('com.kampungrider/vibrate');
+  static const _vibrateChannel = MethodChannel('com.halalexpress/vibrate');
 
   @override
   void initState() {
@@ -2598,7 +2838,7 @@ class _BatchOfferDialogState extends State<_BatchOfferDialog>
               ),
               const SizedBox(height: 16),
               Text(
-                count > 1 ? "Anda Dapat $count Pesanan!" : "Pesanan Baru!",
+                count > 1 ? "${AppTranslations.get('You Got')} $count ${AppTranslations.get('Orders!')}" : AppTranslations.get('New Order!'),
                 style: GoogleFonts.poppins(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -2610,43 +2850,61 @@ class _BatchOfferDialogState extends State<_BatchOfferDialog>
                 constraints: const BoxConstraints(maxHeight: 160),
                 child: SingleChildScrollView(
                   child: Column(
-                    children: widget.orders.map((o) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
+                    children: [
+                      ...widget.orders.map((o) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Icon(Icons.store, size: 16, color: const Color(0xFF0D7377)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                o.shopName,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade800,
+                                ),
+                              ),
+                            ),
+                            if (o.distance != null) ...[
+                              Text(
+                                "${o.distance!.toStringAsFixed(1)}km",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      )),
+                      const Divider(height: 20, thickness: 1),
+                      Row(
                         children: [
-                          Icon(Icons.store, size: 16, color: const Color(0xFF0D7377)),
+                          Icon(Icons.monetization_on, size: 16, color: const Color(0xFF0D7377)),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              o.shopName,
+                              AppTranslations.get('Total Earnings'),
                               style: GoogleFonts.poppins(
                                 fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w600,
                                 color: Colors.grey.shade800,
                               ),
                             ),
                           ),
                           Text(
-                            "RM${o.fare.toStringAsFixed(0)}",
+                            "RM${(widget.orders.fold<double>(0, (sum, o) => sum + o.fare) * 0.8).toStringAsFixed(2)}",
                             style: GoogleFonts.poppins(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
                               color: const Color(0xFF0D7377),
                             ),
                           ),
-                          if (o.distance != null) ...[
-                            const SizedBox(width: 6),
-                            Text(
-                              "${o.distance!.toStringAsFixed(1)}km",
-                              style: GoogleFonts.poppins(
-                                fontSize: 11,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
                         ],
                       ),
-                    )).toList(),
+                    ],
                   ),
                 ),
               ),
@@ -2660,7 +2918,7 @@ class _BatchOfferDialogState extends State<_BatchOfferDialog>
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        "Memproses...",
+                        AppTranslations.get('Processing...'),
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           color: Color(0xFF0D7377),
@@ -2716,7 +2974,7 @@ class _BatchOfferDialogState extends State<_BatchOfferDialog>
                         ),
                         icon: const Icon(Icons.close, color: Colors.white),
                         label: Text(
-                          "Tolak",
+                          AppTranslations.get('Reject'),
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,

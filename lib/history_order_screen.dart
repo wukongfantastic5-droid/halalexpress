@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:excel/excel.dart' hide Border;
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'translations.dart';
 
 class HistoryOrderScreen extends StatefulWidget {
   final String? riderUid;
@@ -175,11 +176,11 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Reset Pendapatan", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(AppTranslations.get('Reset Earnings'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: Text("Semua sejarah pendapatan akan dipadam. Anda pasti?", style: GoogleFonts.poppins(fontSize: 14)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.poppins())),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Reset", style: GoogleFonts.poppins(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins())),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppTranslations.get('Reset'), style: GoogleFonts.poppins(color: Colors.red))),
         ],
       ),
     );
@@ -192,7 +193,7 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text("Pendapatan telah direset"),
+            content: Text(AppTranslations.get('Earnings have been reset')),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -214,14 +215,14 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
   Future<void> exportToExcel() async {
     try {
       final excel = Excel.createExcel();
-      final sheet = excel['Pendapatan'];
+      final sheet = excel[AppTranslations.get('Earnings')];
 
       sheet.appendRow([
-        TextCellValue("Kedai"),
-        TextCellValue("Tarikh Siap"),
-        TextCellValue("Jarak (km)"),
-        TextCellValue("Pendapatan (RM)"),
-        TextCellValue("Rider"),
+        TextCellValue(AppTranslations.get('Shop')),
+        TextCellValue(AppTranslations.get('Date Completed')),
+        TextCellValue(AppTranslations.get('Distance (km)')),
+        TextCellValue(AppTranslations.get('Earnings (RM)')),
+        TextCellValue(AppTranslations.get('Rider')),
       ]);
 
       for (var doc in orders) {
@@ -247,7 +248,7 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
       if (bytes == null) return;
       await File(path).writeAsBytes(bytes);
 
-      await Share.shareXFiles([XFile(path)], text: "Laporan Pendapatan");
+      await Share.shareXFiles([XFile(path)], text: AppTranslations.get('Earnings Report'));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -429,7 +430,7 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
                   ),
                 ),
                 Text(
-                  "Pendapatan",
+                  AppTranslations.get('Earnings'),
                   style: GoogleFonts.poppins(
                     fontSize: 9,
                     color: Colors.white.withOpacity(0.7),
@@ -481,7 +482,7 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
                 ),
                 child: IconButton(
                   icon: Icon(Icons.delete_sweep_rounded, color: Colors.white, size: 20),
-                  tooltip: "Reset Pendapatan",
+                  tooltip: AppTranslations.get('Reset Earnings'),
                   onPressed: clearHistory,
                 ),
               ),
@@ -493,7 +494,7 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
                 ),
                 child: IconButton(
                   icon: Icon(Icons.file_download_rounded, color: Colors.white, size: 20),
-                  tooltip: "Export Excel",
+                  tooltip: AppTranslations.get('Export Excel'),
                   onPressed: exportToExcel,
                 ),
               ),
@@ -537,7 +538,7 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
                               Icon(Icons.calendar_today, size: 14, color: Color(0xFF14C38E)),
                               SizedBox(width: 8),
                               Text(
-                                "Ditapis: ${_formatDate(selectedDate!)}",
+                                "${AppTranslations.get('Filtered:')} ${_formatDate(selectedDate!)}",
                                 style: GoogleFonts.poppins(
                                   color: Colors.white,
                                   fontSize: 13,
@@ -560,7 +561,7 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
                       children: [
                         Expanded(
                           child: _buildStatCard(
-                            "Jumlah Pendapatan",
+                            AppTranslations.get('Total Earnings'),
                             "RM ${totalRevenue.toStringAsFixed(2)}",
                             Color(0xFF0D7377),
                             Color(0xFF14C38E),
@@ -570,7 +571,7 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
                         SizedBox(width: 12),
                         Expanded(
                           child: _buildStatCard(
-                            "Pendapatan Hari Ini",
+                            AppTranslations.get("Today's Earnings"),
                             "RM ${todayRevenue.toStringAsFixed(2)}",
                             Color(0xFF14C38E),
                             Color(0xFF0D7377),
@@ -611,8 +612,8 @@ class _HistoryOrderScreenState extends State<HistoryOrderScreen> with TickerProv
                               SizedBox(height: 16),
                               Text(
                                 selectedDate != null
-                                    ? "Tiada pesanan pada tarikh ini"
-                                    : "Tiada sejarah pesanan",
+                                    ? AppTranslations.get('No orders on this date')
+                                    : AppTranslations.get('No order history'),
                                 style: GoogleFonts.poppins(
                                   color: Colors.white.withOpacity(0.7),
                                   fontSize: 15,

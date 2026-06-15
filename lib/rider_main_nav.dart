@@ -13,6 +13,7 @@ import 'admin_screen.dart';
 import 'history_order_screen.dart';
 import 'rider_wallet_screen.dart';
 import 'rider_profile_screen.dart';
+import 'translations.dart';
 import 'widgets/bunny_icon.dart';
 import 'force_update_screen.dart';
 import 'tutorial_overlay.dart';
@@ -43,39 +44,40 @@ class _RiderMainNavState extends State<RiderMainNav> {
   @override
   void initState() {
     super.initState();
+    AppTranslations.languageNotifier.addListener(_onLangChange);
     riderUid = FirebaseAuth.instance.currentUser?.uid;
     _checkVerification();
     _checkUpdateFromGitHub();
     _tutorialSteps = [
       TutorialStep(
         targetKey: _tab1Key,
-        title: "Selamat Datang!",
-        description: "Anda telah log masuk sebagai Rider. Ikuti tutorial ringkas ini untuk mengenali fungsi-fungsi utama aplikasi BunnyFresh.",
+        title: "${AppTranslations.get('Welcome')}!",
+        description: "Anda telah log masuk sebagai Rider. Ikuti tutorial ringkas ini untuk mengenali fungsi-fungsi utama aplikasi HalalExpress.",
         noSpotlight: true,
       ),
       TutorialStep(
         targetKey: _tab1Key,
-        title: "Pesanan Aktif",
+        title: AppTranslations.get('Active Orders'),
         description: "Lihat dan urus pesanan yang tersedia. Ambil tugas baru dan kemas kini status penghantaran dari sini.",
       ),
       TutorialStep(
         targetKey: _tab2Key,
-        title: "Sejarah",
+        title: AppTranslations.get('History'),
         description: "Semak sejarah pendapatan dan pesanan yang telah selesai. Anda juga boleh muat turun laporan pendapatan.",
       ),
       TutorialStep(
         targetKey: _tab3Key,
-        title: "Dompet",
+        title: AppTranslations.get('Wallet'),
         description: "Lihat baki dompet dan buat permohonan pengeluaran pendapatan.",
       ),
       TutorialStep(
         targetKey: _tab4Key,
-        title: "Profil",
+        title: AppTranslations.get('Profile'),
         description: "Uruskan profil rider anda: nama, email, dokumen motor, kata laluan, dan maklumat bank.",
       ),
       TutorialStep(
         targetKey: _logoutKey,
-        title: "Log Keluar",
+        title: AppTranslations.get('Logout'),
         description: "Tekan ikon ini untuk log keluar dari akaun rider anda bila-bila masa.",
       ),
     ];
@@ -116,7 +118,7 @@ class _RiderMainNavState extends State<RiderMainNav> {
   Future<void> _checkUpdateFromGitHub() async {
     try {
       final res = await http.get(
-        Uri.parse("https://api.github.com/repos/wukongfantastic5-droid/bunnyfresh/releases/latest"),
+        Uri.parse("https://api.github.com/repos/wukongfantastic5-droid/halalexpress/releases/latest"),
         headers: {"Accept": "application/vnd.github.v3+json"},
       );
       if (res.statusCode != 200 || !mounted) return;
@@ -191,7 +193,7 @@ class _RiderMainNavState extends State<RiderMainNav> {
             ),
             const SizedBox(height: 28),
             Text(
-              "Menunggu Pengesahan",
+              AppTranslations.get('Waiting Verification'),
               style: GoogleFonts.poppins(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -222,7 +224,7 @@ class _RiderMainNavState extends State<RiderMainNav> {
               ),
             ),
             Text(
-              "Semak semula kemudian",
+              AppTranslations.get('Check again later'),
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: Colors.white.withOpacity(0.5),
@@ -281,7 +283,7 @@ class _RiderMainNavState extends State<RiderMainNav> {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          "BunnyFresh Rider",
+                          "HalalExpress Rider",
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontSize: 16,
@@ -289,10 +291,32 @@ class _RiderMainNavState extends State<RiderMainNav> {
                           ),
                         ),
                         const Spacer(),
+                        GestureDetector(
+                          onTap: () {
+                            AppTranslations.setLanguage(
+                              AppTranslations.currentLang == 'bm' ? 'en' : 'bm',
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              AppTranslations.currentLang == 'bm' ? 'EN' : 'BM',
+                              style: GoogleFonts.poppins(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
                         IconButton(
                           key: _logoutKey,
                           icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
-                          tooltip: "Log keluar",
+                          tooltip: AppTranslations.get('Logout'),
                           onPressed: () async {
                             await FirebaseAuth.instance.signOut();
                             if (!context.mounted) return;
@@ -314,10 +338,10 @@ class _RiderMainNavState extends State<RiderMainNav> {
                     ),
                     child: Row(
                       children: [
-                        _tab("Pesanan", 0),
-                        _tab("Sejarah", 1),
-                        _tab("Dompet", 2),
-                        _tab("Profil", 3),
+                        _tab(AppTranslations.get('Orders'), 0),
+                        _tab(AppTranslations.get('History'), 1),
+                        _tab(AppTranslations.get('Wallet'), 2),
+                        _tab(AppTranslations.get('Profile'), 3),
                       ],
                     ),
                   ),
@@ -392,5 +416,15 @@ class _RiderMainNavState extends State<RiderMainNav> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    AppTranslations.languageNotifier.removeListener(_onLangChange);
+    super.dispose();
+  }
+
+  void _onLangChange() {
+    if (mounted) setState(() {});
   }
 }

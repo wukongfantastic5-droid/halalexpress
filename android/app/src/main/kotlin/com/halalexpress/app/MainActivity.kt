@@ -1,4 +1,4 @@
-package com.example.kampungrider
+package com.halalexpress.app
 
 import android.content.Context
 import android.content.Intent
@@ -15,9 +15,9 @@ import io.flutter.plugin.common.MethodChannel
 import java.io.File
 
 class MainActivity : FlutterActivity() {
-    private val VIBRATE_CHANNEL = "com.kampungrider/vibrate"
-    private val INSTALL_CHANNEL = "com.kampungrider/install_permission"
-    private val INSTALL_APK_CHANNEL = "com.kampungrider/install_apk"
+    private val VIBRATE_CHANNEL = "com.halalexpress/vibrate"
+    private val INSTALL_CHANNEL = "com.halalexpress/install_permission"
+    private val INSTALL_APK_CHANNEL = "com.halalexpress/install_apk"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

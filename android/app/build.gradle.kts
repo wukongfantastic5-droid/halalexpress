@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.kampungrider"
+    namespace = "com.halalexpress.app"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.kampungrider"
+        applicationId = "com.halalexpress.app"
         minSdk = flutter.minSdkVersion
         targetSdk = 36
         versionCode = flutter.versionCode

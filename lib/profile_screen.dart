@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'main.dart';
+import 'translations.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String uid;
@@ -53,7 +54,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "Profil",
+                      AppTranslations.get('Profile'),
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -116,7 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const SizedBox(height: 24),
                     const SizedBox(height: 24),
                     Text(
-                      "Tetapan",
+                      AppTranslations.get('Settings'),
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -142,7 +143,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Icon(Icons.dark_mode_rounded, color: const Color(0xFF0D7377)),
                           const SizedBox(width: 14),
                           Text(
-                            "Mod Gelap",
+                            AppTranslations.get('Dark Mode'),
                             style: GoogleFonts.poppins(
                               fontSize: 15,
                               color: const Color(0xFF2E3A46),

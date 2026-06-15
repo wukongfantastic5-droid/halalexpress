@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'admin_rider_rating_screen.dart';
+import 'translations.dart';
 
 class AdminRiderVerifyScreen extends StatefulWidget {
   AdminRiderVerifyScreen({super.key});
@@ -35,14 +37,14 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(status == "approved" ? "Rider diluluskan" : "Rider ditolak"),
+          content: Text(status == "approved" ? AppTranslations.get('Rider approved') : AppTranslations.get('Rider rejected')),
           backgroundColor: status == "approved" ? Colors.green : Colors.red,
         ),
       );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Ralat: $e"), backgroundColor: Colors.red),
+        SnackBar(content: Text("${AppTranslations.get('Error')}: $e"), backgroundColor: Colors.red),
       );
     }
   }
@@ -59,14 +61,14 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Sahkan Tukar Bank", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(AppTranslations.get('Confirm Change Bank'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: Text(
-          "Tukar bank rider kepada:\n$newBankType - $newBankAccount?",
+          "${AppTranslations.get('Change rider bank to')}:\n$newBankType - $newBankAccount?",
           style: GoogleFonts.poppins(fontSize: 13),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Sahkan", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppTranslations.get('Confirm'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -85,13 +87,13 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Tukar bank diluluskan", style: GoogleFonts.poppins()), backgroundColor: const Color(0xFF14C38E), behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text(AppTranslations.get('Bank change approved'), style: GoogleFonts.poppins()), backgroundColor: const Color(0xFF14C38E), behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Ralat: $e", style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text("${AppTranslations.get('Error')}: $e", style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
         );
       }
     }
@@ -102,11 +104,11 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Tolak Tukar Bank", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Text("Tolak permohonan tukar bank ini?", style: GoogleFonts.poppins(fontSize: 13)),
+        title: Text(AppTranslations.get('Reject Bank Change'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text(AppTranslations.get('Reject this bank change request?'), style: GoogleFonts.poppins(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Tolak", style: GoogleFonts.poppins(color: Colors.red, fontWeight: FontWeight.w600))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppTranslations.get('Reject'), style: GoogleFonts.poppins(color: Colors.red, fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -119,13 +121,13 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Permohonan ditolak", style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text(AppTranslations.get('Request rejected'), style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Ralat: $e", style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text("${AppTranslations.get('Error')}: $e", style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
         );
       }
     }
@@ -143,15 +145,20 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
             color: Colors.grey.shade100,
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Row(
-            children: [
-              _tabBtn("Pengesahan Rider", 0),
-              _tabBtn("Tukar Bank Rider", 1),
-            ],
-          ),
+            child: Row(
+              children: [
+                _tabBtn(AppTranslations.get('Rider Verification'), 0),
+                _tabBtn(AppTranslations.get('Change Rider Bank'), 1),
+                _tabBtn(AppTranslations.get('Rider Rating'), 2),
+              ],
+            ),
         ),
         Expanded(
-          child: _tabIndex == 0 ? _riderVerificationList() : _bankRequestList(),
+          child: _tabIndex == 0
+              ? _riderVerificationList()
+              : _tabIndex == 1
+                  ? _bankRequestList()
+                  : const AdminRiderRatingScreen(),
         ),
       ],
     );
@@ -185,8 +192,8 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
     return StreamBuilder<QuerySnapshot>(
       stream: firestore.collection("users").where("role", isEqualTo: "rider").snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text("Ralat: ${snapshot.error}", style: GoogleFonts.poppins(color: Colors.red)));
+          if (snapshot.hasError) {
+          return Center(child: Text("${AppTranslations.get('Error')}: ${snapshot.error}", style: GoogleFonts.poppins(color: Colors.red)));
         }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -207,7 +214,7 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
               children: [
                 Icon(Icons.motorcycle, size: 64, color: Colors.grey.shade300),
                 const SizedBox(height: 12),
-                Text("Tiada rider", style: GoogleFonts.poppins(color: Colors.grey.shade500)),
+                Text(AppTranslations.get('No riders'), style: GoogleFonts.poppins(color: Colors.grey.shade500)),
               ],
             ),
           );
@@ -263,7 +270,7 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          status == "approved" ? "Diluluskan" : status == "rejected" ? "Ditolak" : "Menunggu",
+                          status == "approved" ? AppTranslations.get('Approved') : status == "rejected" ? AppTranslations.get('Rejected') : AppTranslations.get('Pending'),
                           style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600,
                             color: status == "approved" ? Colors.green : status == "rejected" ? Colors.red : Colors.orange),
                         ),
@@ -277,12 +284,12 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         children: [
-                          _docImage("Gambar Diri", d["rider_photo"] ?? ""),
-                          _docImage("Lesen Depan", d["license_front"] ?? ""),
-                          _docImage("Lesen Belakang", d["license_back"] ?? ""),
-                          _docImage("Cukai Jalan", d["road_tax"] ?? ""),
-                          _docImage("Motor", d["motorcycle_photo"] ?? ""),
-                          _docImage("Insurans", d["insurance"] ?? ""),
+                          _docImage(AppTranslations.get('Selfie Photo'), d["rider_photo"] ?? ""),
+                          _docImage(AppTranslations.get('License (Front)'), d["license_front"] ?? ""),
+                          _docImage(AppTranslations.get('License (Back)'), d["license_back"] ?? ""),
+                          _docImage(AppTranslations.get('Road Tax'), d["road_tax"] ?? ""),
+                          _docImage(AppTranslations.get('Motorcycle Photo'), d["motorcycle_photo"] ?? ""),
+                          _docImage(AppTranslations.get('Insurance'), d["insurance"] ?? ""),
                         ],
                       ),
                     ),
@@ -298,7 +305,7 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
                               backgroundColor: Colors.green,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
-                            child: Text("Luluskan", style: GoogleFonts.poppins(color: Colors.white)),
+                            child: Text(AppTranslations.get('Approve'), style: GoogleFonts.poppins(color: Colors.white)),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -309,7 +316,7 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
                               backgroundColor: Colors.red,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
-                            child: Text("Tolak", style: GoogleFonts.poppins(color: Colors.white)),
+                            child: Text(AppTranslations.get('Reject'), style: GoogleFonts.poppins(color: Colors.white)),
                           ),
                         ),
                       ],
@@ -330,7 +337,7 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
       stream: firestore.collection("rider_bank_requests").orderBy("created_at", descending: true).snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(child: Text("Ralat: ${snapshot.error}", style: GoogleFonts.poppins(color: Colors.red)));
+          return Center(child: Text("${AppTranslations.get('Error')}: ${snapshot.error}", style: GoogleFonts.poppins(color: Colors.red)));
         }
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -347,7 +354,7 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
               children: [
                 Icon(Icons.account_balance, size: 64, color: Colors.grey.shade300),
                 const SizedBox(height: 12),
-                Text("Tiada permohonan tukar bank", style: GoogleFonts.poppins(color: Colors.grey.shade500)),
+                Text(AppTranslations.get('No bank change requests'), style: GoogleFonts.poppins(color: Colors.grey.shade500)),
               ],
             ),
           );
@@ -356,7 +363,7 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           children: [
-            Text("${pending.length} permohonan menunggu", style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600)),
+            Text("${pending.length} ${AppTranslations.get('pending requests')}", style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600)),
             const SizedBox(height: 12),
             if (pending.isNotEmpty) ...[
               ...pending.map((doc) => _bankRequestCard(doc, false)),
@@ -367,7 +374,7 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
                 children: [
                   Icon(Icons.history, size: 16, color: const Color(0xFF0D7377)),
                   const SizedBox(width: 6),
-                  Text("Sejarah", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF0D7377))),
+                  Text(AppTranslations.get('History'), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF0D7377))),
                 ],
               ),
               const SizedBox(height: 8),
@@ -390,15 +397,15 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
     switch (status) {
       case "approved":
         statusColor = const Color(0xFF14C38E);
-        statusText = "Disahkan";
+        statusText = AppTranslations.get('Approved');
         break;
       case "rejected":
         statusColor = Colors.red;
-        statusText = "Ditolak";
+        statusText = AppTranslations.get('Rejected');
         break;
       default:
         statusColor = const Color(0xFFFFA000);
-        statusText = "Menunggu";
+        statusText = AppTranslations.get('Pending');
     }
 
     return Container(
@@ -418,7 +425,7 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(data["rider_name"] ?? "Rider", style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF2E3A46))),
+                    Text(data["rider_name"] ?? AppTranslations.get('Rider'), style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF2E3A46))),
                     const SizedBox(height: 2),
                     Text(dateStr, style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade500)),
                   ],
@@ -438,10 +445,10 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Bank Lama: ${data["current_bank_type"] ?? "-"} - ${data["current_bank_account"] ?? "-"}",
+                Text("${AppTranslations.get('Old Bank')}: ${data["current_bank_type"] ?? "-"} - ${data["current_bank_account"] ?? "-"}",
                     style: GoogleFonts.poppins(fontSize: 12, color: Colors.red.shade400)),
                 const SizedBox(height: 4),
-                Text("Bank Baru: ${data["new_bank_type"] ?? "-"} - ${data["new_bank_account"] ?? "-"}",
+                Text("${AppTranslations.get('New Bank')}: ${data["new_bank_type"] ?? "-"} - ${data["new_bank_account"] ?? "-"}",
                     style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFF14C38E), fontWeight: FontWeight.w600)),
               ],
             ),
@@ -461,7 +468,7 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
-                      child: Text("Sahkan", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                      child: Text(AppTranslations.get('Confirm'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
                     ),
                   ),
                 ),
@@ -477,7 +484,7 @@ class _AdminRiderVerifyScreenState extends State<AdminRiderVerifyScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
-                      child: Text("Tolak", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                      child: Text(AppTranslations.get('Reject'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
                     ),
                   ),
                 ),

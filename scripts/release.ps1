@@ -43,7 +43,7 @@ flutter build apk --release
 if (-not $?) { Write-Error "Build failed"; exit 1 }
 
 $apkPath = "build\app\outputs\flutter-apk\app-release.apk"
-$apkName = "bunnyfresh-v$newVer.apk"
+$apkName = "halalexpress-v$newVer.apk"
 
 # Commit, tag, push
 git add -A
@@ -55,7 +55,7 @@ if ($LASTEXITCODE -ne 0) { Write-Error "Push failed"; exit 1 }
 
 # Create GitHub release
 gh release create "v$newVer" `
-  --title "BunnyFresh v$newVer" `
+  --title "HalalExpress v$newVer" `
   --notes "Release v$newVer" `
   "$($apkPath)#$apkName"
 

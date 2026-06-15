@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'notification_service.dart';
+import 'translations.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -74,7 +75,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         });
       }
     } catch (e) {
-      debugPrint("Ralat FCM Token: $e");
+      debugPrint("${AppTranslations.get('Error')} FCM Token: $e");
     }
   }
 
@@ -105,7 +106,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         showNewOrderPopup(data);
 
         NotificationService.showOrderNotification(
-          title: "🚨 Pesanan Baru Diterima",
+          title: "🚨 ${AppTranslations.get('New Order!')}",
           body: "${_fmtItem(data["grocery"] ?? "", data["items"])} → ${data["drop"]}",
           orderId: newest.id,
         );
@@ -116,7 +117,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   void listenNotificationTap() {
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Membuka pesanan terkini...")),
+        SnackBar(content: Text(AppTranslations.get('Opening latest order...'))),
       );
     });
   }
@@ -170,7 +171,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "PESANAN BARU DITERIMA",
+                  AppTranslations.get('New Order!').toUpperCase(),
                   style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -226,7 +227,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                     onPressed: () => Navigator.pop(context),
                     child: Text(
-                      "LIHAT PESANAN",
+                      AppTranslations.get('View Order').toUpperCase(),
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w600,
                         color: Colors.white,
@@ -291,11 +292,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Reset Pendapatan", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Text("Semua sejarah pendapatan akan dipadam. Anda pasti?", style: GoogleFonts.poppins(fontSize: 14)),
+        title: Text(AppTranslations.get('Reset Earnings'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text(AppTranslations.get('All earnings history will be deleted. Are you sure?'), style: GoogleFonts.poppins(fontSize: 14)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.poppins())),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Reset", style: GoogleFonts.poppins(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins())),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppTranslations.get('Reset'), style: GoogleFonts.poppins(color: Colors.red))),
         ],
       ),
     );
@@ -308,7 +309,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text("Pendapatan telah direset"),
+            content: Text(AppTranslations.get('Earnings have been reset')),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -318,7 +319,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal reset: $e"), backgroundColor: Colors.red),
+          SnackBar(content: Text("${AppTranslations.get('Failed')}: $e"), backgroundColor: Colors.red),
         );
       }
     }
@@ -327,14 +328,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Future<void> exportToExcel() async {
     try {
       final excel = Excel.createExcel();
-      final sheet = excel['Pendapatan'];
+      final sheet = excel[AppTranslations.get('Earnings')];
 
       sheet.appendRow([
-        TextCellValue("Kedai"),
-        TextCellValue("Tarikh Siap"),
-        TextCellValue("Jarak (km)"),
-        TextCellValue("Pendapatan (RM)"),
-        TextCellValue("Rider"),
+        TextCellValue(AppTranslations.get('Business Name')),
+        TextCellValue(AppTranslations.get('Date Completed')),
+        TextCellValue(AppTranslations.get('Distance (km)')),
+        TextCellValue(AppTranslations.get('Earnings (RM)')),
+        TextCellValue(AppTranslations.get('Rider')),
       ]);
 
       for (var doc in orders) {
@@ -360,11 +361,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       if (bytes == null) return;
       await File(path).writeAsBytes(bytes);
 
-      await Share.shareXFiles([XFile(path)], text: "Laporan Pendapatan");
+      await Share.shareXFiles([XFile(path)], text: AppTranslations.get('Earnings Report'));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Gagal export: $e"), backgroundColor: Colors.red),
+          SnackBar(content: Text("${AppTranslations.get('Failed')}: $e"), backgroundColor: Colors.red),
         );
       }
     }
@@ -381,14 +382,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             children: [
               _actionButton(
                 icon: Icons.delete_sweep_rounded,
-                label: "Reset",
+                label: AppTranslations.get('Reset'),
                 color: Colors.redAccent,
                 onTap: clearHistory,
               ),
               const SizedBox(width: 12),
               _actionButton(
                 icon: Icons.file_download_rounded,
-                label: "Export Excel",
+                label: AppTranslations.get('Export Excel'),
                 color: const Color(0xFF0D7377),
                 onTap: exportToExcel,
               ),
@@ -398,7 +399,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(
             children: [
               _buildCard(
-                "Jumlah Pendapatan",
+                AppTranslations.get('Total Earnings'),
                 "RM ${totalRevenue.toStringAsFixed(2)}",
                 Icons.monetization_on,
                 const Color(0xFF0D7377),
@@ -406,7 +407,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               const SizedBox(width: 12),
               _buildCard(
-                "Pesanan",
+                AppTranslations.get('Orders'),
                 "$totalOrders",
                 Icons.receipt_long,
                 const Color(0xFF6366F1),
@@ -418,7 +419,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Row(
             children: [
               _buildCard(
-                "Selesai",
+                AppTranslations.get('Completed'),
                 "$completedOrders",
                 Icons.check_circle,
                 const Color(0xFFF59E0B),
@@ -426,7 +427,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
               const SizedBox(width: 12),
               _buildCard(
-                "Kadar Kejayaan",
+                AppTranslations.get('Success Rate'),
                 totalOrders == 0
                     ? "0%"
                     : "${((completedOrders / totalOrders) * 100).toStringAsFixed(1)}%",
@@ -480,7 +481,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      "Pendapatan Bulanan",
+                      AppTranslations.get('Monthly Earnings'),
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -495,7 +496,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     child: Center(
                       child: Text(
-                        "Tiada data pendapatan",
+                        AppTranslations.get('No earnings data'),
                         style: GoogleFonts.poppins(
                           color: Colors.grey.shade400,
                           fontSize: 14,
@@ -589,7 +590,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      "Prestasi Rider",
+                      AppTranslations.get('Rider Performance'),
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -604,7 +605,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     child: Center(
                       child: Text(
-                        "Tiada data rider",
+                        AppTranslations.get('No rider data'),
                         style: GoogleFonts.poppins(
                           color: Colors.grey.shade400,
                           fontSize: 14,
@@ -653,7 +654,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              "${e.value} pesanan",
+                              "${e.value} ${AppTranslations.get('Orders').toLowerCase()}",
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,

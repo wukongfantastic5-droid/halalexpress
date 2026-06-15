@@ -66,7 +66,7 @@ class DefaultFirebaseOptions {
     projectId: 'gombak-runner',
     databaseURL: 'https://gombak-runner-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'gombak-runner.firebasestorage.app',
-    iosBundleId: 'com.freshbunny.app',
+    iosBundleId: 'com.halalexpress.app',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -76,7 +76,7 @@ class DefaultFirebaseOptions {
     projectId: 'gombak-runner',
     databaseURL: 'https://gombak-runner-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'gombak-runner.firebasestorage.app',
-    iosBundleId: 'com.freshbunny.app',
+    iosBundleId: 'com.halalexpress.app',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(

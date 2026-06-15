@@ -11,6 +11,7 @@ import 'announcement_user_screen.dart';
 import 'feedback_screen.dart';
 import 'customer_history_screen.dart';
 import 'profile_screen.dart';
+import 'translations.dart';
 import 'tutorial_overlay.dart';
 import 'widgets/bunny_icon.dart';
 import 'force_update_screen.dart';
@@ -60,6 +61,7 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
+    AppTranslations.languageNotifier.addListener(_onLangChange);
     _slideController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -95,14 +97,14 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
     _tutorialSteps = [
       TutorialStep(
         targetKey: _maklumatIconKey,
-        title: "Selamat Datang!",
-        description: "Anda telah log masuk sebagai Pelanggan. Ikuti tutorial ringkas ini untuk mengenali fungsi-fungsi utama aplikasi BunnyFresh.",
+        title: AppTranslations.get('Welcome!'),
+        description: AppTranslations.get('You have logged in as a Customer. Follow this brief tutorial to learn the main features of HalalExpress.'),
         noSpotlight: true,
       ),
       TutorialStep(
         targetKey: _maklumatIconKey,
-        title: "Maklumat Terkini",
-        description: "Semak halaman ini untuk sebarang pengumuman atau pemberitahuan terkini daripada pihak admin tentang perkhidmatan kami.",
+        title: AppTranslations.get('Latest Info'),
+        description: AppTranslations.get('Check this page for the latest announcements or notifications from the admin about our services.'),
         onStepEnter: () {
           if (index != 1) {
             setState(() => index = 1);
@@ -111,8 +113,8 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
       ),
       TutorialStep(
         targetKey: _feedbackIconKey,
-        title: "Maklum Balas",
-        description: "Hantar maklum balas atau cadangan anda kepada pihak admin. Pandangan anda membantu kami memperbaiki perkhidmatan.",
+        title: AppTranslations.get('Feedback'),
+        description: AppTranslations.get('Send your feedback or suggestions to the admin. Your views help us improve our service.'),
         onStepEnter: () {
           if (index != 2) {
             setState(() => index = 2);
@@ -121,8 +123,8 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
       ),
       TutorialStep(
         targetKey: _sejarahIconKey,
-        title: "Sejarah Pesanan",
-        description: "Lihat sejarah pesanan anda yang telah selesai. Anda boleh semak butiran pesanan lepas di sini.",
+        title: AppTranslations.get('Order History'),
+        description: AppTranslations.get('View your completed order history. You can check past order details here.'),
         onStepEnter: () {
           if (index != 3) {
             setState(() => index = 3);
@@ -131,8 +133,8 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
       ),
       TutorialStep(
         targetKey: _profilIconKey,
-        title: "Profil Anda",
-        description: "Uruskan profil peribadi anda, termasuk nama, alamat, nombor telefon, dan tetapan gelap (dark mode).",
+        title: AppTranslations.get('Your Profile'),
+        description: AppTranslations.get('Manage your personal profile, including name, address, phone number, and dark mode settings.'),
         onStepEnter: () {
           if (index != 4) {
             setState(() => index = 4);
@@ -141,8 +143,8 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
       ),
       TutorialStep(
         targetKey: _logoutKey,
-        title: "Log Keluar",
-        description: "Tekan ikon ini untuk log keluar dari akaun anda bila-bila masa.",
+        title: AppTranslations.get('Logout'),
+        description: AppTranslations.get('Press this icon to log out of your account anytime.'),
       ),
     ];
 
@@ -158,7 +160,7 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
   Future<void> _checkUpdateFromGitHub() async {
     try {
       final res = await http.get(
-        Uri.parse("https://api.github.com/repos/wukongfantastic5-droid/bunnyfresh/releases/latest"),
+        Uri.parse("https://api.github.com/repos/wukongfantastic5-droid/halalexpress/releases/latest"),
         headers: {"Accept": "application/vnd.github.v3+json"},
       );
       if (res.statusCode != 200 || !mounted) return;
@@ -206,7 +208,12 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
   @override
   void dispose() {
     _slideController.dispose();
+    AppTranslations.languageNotifier.removeListener(_onLangChange);
     super.dispose();
+  }
+
+  void _onLangChange() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _markTutorialSeen() async {
@@ -248,7 +255,7 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
             ),
                 const SizedBox(width: 10),
                 Text(
-                  "BunnyFresh",
+                  "HalalExpress",
                   style: GoogleFonts.poppins(
                     color: Colors.white,
                     fontSize: 16,
@@ -256,11 +263,33 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
                   ),
                 ),
                 const Spacer(),
-                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    AppTranslations.setLanguage(
+                      AppTranslations.currentLang == 'bm' ? 'en' : 'bm',
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      AppTranslations.currentLang == 'bm' ? 'EN' : 'BM',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
                 IconButton(
                   key: _logoutKey,
                   icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
-                  tooltip: "Log keluar",
+                  tooltip: AppTranslations.get('Logout'),
                   onPressed: () async {
                     await FirebaseAuth.instance.signOut();
                     if (!context.mounted) return;
@@ -332,27 +361,27 @@ class _UserMainNavState extends State<UserMainNav> with TickerProviderStateMixin
                   BottomNavigationBarItem(
                     icon: _pesananIcon,
                     activeIcon: _pesananIcon,
-                    label: "Pesanan",
+                    label: AppTranslations.get('Orders'),
                   ),
                   BottomNavigationBarItem(
                     icon: _maklumatIcon,
                     activeIcon: _maklumatIcon,
-                    label: "Maklumat Terkini",
+                    label: AppTranslations.get('Latest Info'),
                   ),
                   BottomNavigationBarItem(
                     icon: _feedbackIcon,
                     activeIcon: _feedbackIcon,
-                    label: "Maklum Balas",
+                    label: AppTranslations.get('Feedback'),
                   ),
                   BottomNavigationBarItem(
                     icon: _sejarahIcon,
                     activeIcon: _sejarahIcon,
-                    label: "Sejarah",
+                    label: AppTranslations.get('History'),
                   ),
                   BottomNavigationBarItem(
                     icon: _profilIcon,
                     activeIcon: _profilIcon,
-                    label: "Profil",
+                    label: AppTranslations.get('Profile'),
                   ),
                 ],
               ),

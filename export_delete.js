@@ -193,7 +193,7 @@ async function main() {
   const filePath = path.join(OUTPUT_DIR, `orders_${dateStr}.xlsx`);
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "BunnyFresh Export";
+  workbook.creator = "HalalExpress Export";
   workbook.created = new Date();
 
   // ============ SHEET 1: Semua Pesanan ============

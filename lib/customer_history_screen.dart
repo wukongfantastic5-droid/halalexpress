@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'translations.dart';
 
 String _formatItems(dynamic items) {
   if (items is List && items.isNotEmpty) {
@@ -22,11 +23,11 @@ String _formatDate(DateTime d) {
       "${d.year}";
 }
 
-List<String> _timelineSteps = [
-  "Menunggu",
-  "Dijemput",
-  "Dalam Perjalanan",
-  "Selesai",
+List<String> _timelineSteps() => [
+  AppTranslations.get('Waiting'),
+  AppTranslations.get('Picked Up'),
+  AppTranslations.get('In Transit'),
+  AppTranslations.get('Completed'),
 ];
 
 int _statusToIndex(String status) {
@@ -66,6 +67,7 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
   @override
   void initState() {
     super.initState();
+    AppTranslations.languageNotifier.addListener(_onLangChange);
     _fadeController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 600),
@@ -79,15 +81,20 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
 
   @override
   void dispose() {
+    AppTranslations.languageNotifier.removeListener(_onLangChange);
     _fadeController.dispose();
     super.dispose();
+  }
+
+  void _onLangChange() {
+    if (mounted) setState(() {});
   }
 
   Widget _buildTimeline(int activeIndex) {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 12, horizontal: 4),
       child: Row(
-        children: List.generate(_timelineSteps.length * 2 - 1, (i) {
+        children: List.generate(_timelineSteps().length * 2 - 1, (i) {
           if (i.isOdd) {
             final stepIdx = i ~/ 2;
             final isCompleted = stepIdx < activeIndex;
@@ -155,12 +162,12 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
     return Padding(
       padding: EdgeInsets.only(bottom: 8),
       child: Row(
-        children: List.generate(_timelineSteps.length, (i) {
+        children: List.generate(_timelineSteps().length, (i) {
           final isCompleted = i < activeIndex;
           final isActive = i == activeIndex;
           return Expanded(
             child: Text(
-              _timelineSteps[i],
+              _timelineSteps()[i],
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 8,
@@ -245,7 +252,7 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      data["shop_name"] ?? "Kedai",
+                      data["shop_name"] ?? AppTranslations.get('Shop'),
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -293,7 +300,7 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
                       ),
                     ),
                     Text(
-                      "Tambang",
+                      AppTranslations.get('Fare'),
                       style: GoogleFonts.poppins(
                         fontSize: 9,
                         color: Colors.white.withOpacity(0.7),
@@ -407,6 +414,9 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
                 }),
               ],
             ),
+          ] else if (data["pending_rating"] == true) ...[
+            SizedBox(height: 8),
+            _buildRatingSection(docId, data),
           ],
           SizedBox(height: 10),
           Divider(color: Colors.white.withOpacity(0.1), height: 1),
@@ -415,6 +425,197 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
           _buildTimeline(statusIndex),
         ],
       ),
+    );
+  }
+
+  Widget _buildRatingSection(String orderId, Map<String, dynamic> data) {
+    final riderUid = data["rider_uid"] ?? "";
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D7377).withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF14C38E).withOpacity(0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                AppTranslations.get('Rate Rider'),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withOpacity(0.85),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF14C38E),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  "BARU",
+                  style: GoogleFonts.poppins(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(5, (index) {
+              return GestureDetector(
+                onTap: () => _rateRider(orderId, riderUid, data, index + 1),
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Icon(
+                    Icons.star_border,
+                    color: Colors.white.withOpacity(0.4),
+                    size: 28,
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _rateRider(String orderId, String riderUid, Map<String, dynamic> data, int rating) {
+    if (riderUid.isEmpty) return;
+    final userUid = auth.currentUser?.uid ?? "";
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        String comment = "";
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0D7377), Color(0xFF14C38E)],
+                      ),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.star, color: Colors.white, size: 28),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    AppTranslations.get('Rate Your Rider'),
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1F2937),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    AppTranslations.get('Share your experience'),
+                    style: GoogleFonts.poppins(
+                      fontSize: 13,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (i) {
+                      return IconButton(
+                        icon: Icon(
+                          i < rating ? Icons.star : Icons.star_border,
+                          color: i < rating ? const Color(0xFFFCD34D) : Colors.grey.shade300,
+                          size: 40,
+                        ),
+                        onPressed: () => setDialogState(() => rating = i + 1),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: AppTranslations.get('Add a comment (optional)'),
+                      hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade400),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                    maxLines: 2,
+                    onChanged: (v) => comment = v,
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0D7377),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: () async {
+                        await firestore.collection("ratings").add({
+                          "order_id": orderId,
+                          "rider_uid": riderUid,
+                          "customer_uid": userUid,
+                          "rating": rating,
+                          "comment": comment,
+                          "created_at": FieldValue.serverTimestamp(),
+                        });
+                        await firestore.collection("orders").doc(orderId).update({
+                          "rider_rating": rating,
+                          "pending_rating": false,
+                        });
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        if (mounted) setState(() {});
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(AppTranslations.get('Your rating has been submitted')),
+                            backgroundColor: const Color(0xFF0D7377),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      },
+                      child: Text(
+                        AppTranslations.get('Submit Rating'),
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -438,7 +639,7 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
           backgroundColor: Colors.transparent,
           appBar: AppBar(
             title: Text(
-              "Sejarah Pesanan",
+              AppTranslations.get('Order History'),
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -450,7 +651,7 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
           ),
           body: Center(
             child: Text(
-              "Sila log masuk",
+              AppTranslations.get('Please log in'),
               style: GoogleFonts.poppins(
                 color: Colors.white.withOpacity(0.7),
                 fontSize: 15,
@@ -484,7 +685,7 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(
-            "Sejarah Pesanan",
+            AppTranslations.get('Order History'),
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -504,7 +705,7 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
                   child: Padding(
                     padding: EdgeInsets.all(32),
                     child: Text(
-                      "Ralat: ${snapshot.error}",
+                      "${AppTranslations.get('Error')}: ${snapshot.error}",
                       style: GoogleFonts.poppins(
                         color: Colors.white.withOpacity(0.7),
                         fontSize: 14,
@@ -552,7 +753,7 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
                         ),
                         SizedBox(height: 16),
                         Text(
-                          "Tiada sejarah pesanan",
+                          AppTranslations.get('No order history'),
                           style: GoogleFonts.poppins(
                             color: Colors.white.withOpacity(0.7),
                             fontSize: 16,
@@ -560,7 +761,7 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen>
                         ),
                         SizedBox(height: 8),
                         Text(
-                          "Pesanan yang telah selesai akan muncul di sini.",
+                          AppTranslations.get('Completed orders will appear here.'),
                           style: GoogleFonts.poppins(
                             color: Colors.white.withOpacity(0.4),
                             fontSize: 13,

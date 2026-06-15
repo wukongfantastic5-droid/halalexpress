@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'translations.dart';
 
 class TutorialStep {
   final GlobalKey targetKey;
@@ -418,7 +419,7 @@ class _TooltipCard extends StatelessWidget {
                           vertical: 10,
                         ),
                         child: Text(
-                          isLast ? "Mula" : "Seterusnya",
+                          isLast ? AppTranslations.get('Start') : AppTranslations.get('Next'),
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,

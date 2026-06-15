@@ -1,7 +1,7 @@
-# AGENTS.md — KampungRider Redesign Reference
+# AGENTS.md — HalalExpress Reference
 
 ## Goal
-Rebuild the existing KampungRider delivery app (currently in production, user-facing app with Google Play login issues) using Flutter. The new app is named **BunnyFresh** (was FreshBunny, rebranded from KampungRider).
+Rebuild the existing KampungRider delivery app (currently in production) using Flutter. The new app is named **HalalExpress**.
 
 ## Key Architecture Decisions
 - **State management**: `setState` only, no Provider/Bloc/Riverpod
@@ -21,7 +21,7 @@ Rebuild the existing KampungRider delivery app (currently in production, user-fa
 
 ## Project Structure
 ```
-kampungrider_redesign/
+halalexpress/
 ├── lib/
 │   ├── main.dart                    # App entry + FCM setup + notifications
 │   ├── splash_screen.dart           # Animated splash → onboarding or login
@@ -125,11 +125,11 @@ kampungrider_redesign/
 - Ride time/price calculation uses static methods in `currency_helper.dart`
 - Payment integration ready (Billplz) but not fully wired—only captures payment screenshot
 - Customer notification when rider accepts: via FCM + local notification with `accepted_job.mp3`
-- There is a `kampungrider_redesign/lib/currency_helper.dart` for formatting
+- There is a `lib/currency_helper.dart` for formatting
 - The old splash screen initially showed a bunny.jpg in center; replaced with BunnyIcon custom painter
 - The native splash screen icon was removed (just teal color)
 - `app_icon.png` used for launcher icon
-- iOS/macOS bundle IDs still use `com.example.kampungrider` (change from KampungRider to BunnyFresh was done for display names; bundle ID change may affect Firebase)
+- iOS/macOS bundle IDs use `com.halalexpress.app`
 - Firebase notification sound files must be in `android/app/src/main/res/raw/`
 
 ### 11. Income History Management
@@ -141,7 +141,48 @@ kampungrider_redesign/
 - Dependencies: `excel: ^4.0.6`, `share_plus: ^10.1.4`, `path_provider: ^2.1.5`
 - compileSdk/targetSdk upgraded to 36 (patched `flutter_native_splash` cache to compileSdk 34)
 
-### 12. Debug Quick-Order (order_screen.dart)
+### 12. Quick-Login (login_screen.dart) — TEMPORARY, REMOVE BEFORE PRODUCTION
+- **3 tickboxes** labeled "LOGIN CEPAT (alfagroup)" above the account name field:
+  1. Pelanggan → `abu200` / `Abu!23`
+  2. Rider → `mamat300` / `Mamat!23`
+  3. Admin → `zainal200` / `Zainal!23` (bypasses 2FA, goes straight to AdminMainNav)
+- Ticking a box auto-fills account name + password; untick to go back to manual login
+- Admin quick-login bypasses the "Admin only via Log Masuk Admin" block
+- Firebase Auth accounts created with emails: `abu200@halalexpress.com`, `mamat300@halalexpress.com`, `wukongfantastic5@gmail.com`
+- Rider doc `mamat300` has `rider_verified: true`
+- **To remove**: delete the `_quickRole` state, the `_quickCheckbox` method, the checkbox UI block, and the `_quickRole != 2` condition in the admin block check
+
+### 13. Rider Commission (80/20 split)
+- **Order list card** (`admin_screen.dart`): Rider sees `fare * 0.8` instead of full fare; label changes to `"Pendapatan Saya"` (single) or `"Jumlah Pendapatan"` (batch)
+- **Batch offer popup** (`_BatchOfferDialog`): Shows only total 80% sum at bottom, no individual fare per order
+- **History screen** (`history_order_screen.dart`): Already uses `_riderShare(fare * 0.8)` for revenue, order cards, and Excel export
+- **Admin view**: Unchanged — still shows full fare
+- Batch total computed by summing `fare` of all orders sharing the same `batch_id`, then × 0.8
+- Helper: `_riderFareText()` at `admin_screen.dart:1782`
+
+### 14. OSRM Route Optimization
+- **`_openBatchRoute()`** (`admin_screen.dart:1655`): Uses OSRM Trip API to find optimal stop order from rider's current location
+  - Calls `https://router.project-osrm.org/trip/v1/driving/{coords}?source=first&roundtrip=false`
+  - Reorders stops based on `waypoint_index` in response (nearest-next optimization)
+  - Falls back to pickups-first group sort if OSRM fails/times out
+  - Opens Google Maps with optimized waypoints
+- **Dependency**: `http: ^1.6.0` already present; `geolocator` for current location
+
+### 15. Rating System
+- **Trigger**: When rider completes delivery (`completeDelivery` in `admin_screen.dart`), sets `pending_rating: true` on the order
+- **Customer prompt**: In `customer_history_screen.dart`, a "BARU" badge appears and tapping a star opens a dialog with 1-5 stars + optional comment
+- **Storage**: Rating saved to `ratings` collection (order_id, rider_uid, customer_uid, rating, comment, created_at) + `rider_rating` field on order document; `pending_rating` cleared after submit
+- **Rider profile**: `rider_profile_screen.dart` shows average rating (stars + count) from `ratings` collection
+- **Admin view**: New "Rating Rider" tab in `admin_rider_verify_screen.dart` — lists all riders with average rating, count, ranking (#1/2/3 gold/silver/bronze), search by name, sort by rating/count/name; tap rider card shows detailed breakdown of each rating + comment
+
+### 16. Language Toggle (BM / English)
+- **System**: `lib/translations.dart` — `AppTranslations` class with `ValueNotifier<string>` for reactive language switching
+- **Storage**: Language preference saved to `SharedPreferences` key `app_lang`
+- **Toggle**: BM/EN text buttons in app bar of both `user_main_nav.dart` and `rider_main_nav.dart`
+- **Scope**: All ~27 screens now use `AppTranslations.get()` for display strings (status labels, buttons, nav tabs, dialog text, form labels, etc.)
+- **Initialization**: `AppTranslations.init()` called in `main.dart` before `runApp`
+
+### 17. Debug Quick-Order (order_screen.dart)
 - **3 preset checkboxes** always visible under "Cari lokasi penghantaran" field:
   1. Petronas Taman Amaniah — Nasi → Jalan 1/4 Taman Amaniah
   2. Masjid Taman Amaniah — Roti → Jalan 1/2 Taman Amaniah
@@ -149,3 +190,12 @@ kampungrider_redesign/
 - Check any box → Submit button routes to `_submitDebugOrders()` — geocodes each via Nominatim + OSRM, creates Firestore orders directly
 - Success dialog with count; auto-unchecks after submit
 - No toggle — always visible when logged in as customer
+
+### 18. APK Install (force_update_screen.dart)
+- **Method**: Custom MethodChannel `com.halalexpress/install_apk` → native Kotlin `Intent.ACTION_INSTALL_PACKAGE`
+- **FileProvider**: `content://` URI via `FileProvider.getUriForFile()` (solves Android 7+ FileUriExposedException)
+- **Permission**: `com.halalexpress/install_permission` channel checks/requests `MANAGE_UNKNOWN_APP_SOURCES`
+- **File path**: Downloads to `getTemporaryDirectory()` → `${appName}_${version}.apk`
+- **file_paths.xml**: `<cache-path name="cache" path="." />` covers temporary directory
+- **Dependency**: `open_file` removed; replaced entirely by native channel
+- **Note**: MIUI/HyperOS security scanner runs at system level; `ACTION_INSTALL_PACKAGE` is the most direct path

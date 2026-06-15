@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'notification_service.dart';
 import 'initialize_screen.dart';
 import 'firebase_options.dart';
+import 'translations.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
@@ -56,6 +57,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await firebaseInit();
+  await AppTranslations.init();
 
   runApp(const MyApp());
 
@@ -124,7 +126,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "BunnyFresh",
+      title: "HalalExpress",
       theme: _buildLightTheme(),
       darkTheme: _buildDarkTheme(),
       themeMode: _darkMode ? ThemeMode.dark : ThemeMode.light,

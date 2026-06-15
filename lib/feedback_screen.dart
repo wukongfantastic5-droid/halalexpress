@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'translations.dart';
+
 class FeedbackScreen extends StatefulWidget {
   const FeedbackScreen({super.key});
 
@@ -17,12 +19,20 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
   bool _loading = false;
 
   final _types = ["Cadangan", "Aduan", "Pujian", "Lain-lain"];
+  final _typeKeys = {
+    "Cadangan": "Suggestion",
+    "Aduan": "Complaint",
+    "Pujian": "Praise",
+    "Lain-lain": "Others",
+  };
   final _icons = {
     "Cadangan": Icons.lightbulb_outline,
     "Aduan": Icons.report_problem_outlined,
     "Pujian": Icons.thumb_up_outlined,
     "Lain-lain": Icons.more_horiz,
   };
+
+  String _translateType(String type) => AppTranslations.get(_typeKeys[type] ?? type);
 
   @override
   void dispose() {
@@ -34,7 +44,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     if (_message.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Sila masukkan maklum balas"),
+          content: Text(AppTranslations.get('Please enter feedback')),
           backgroundColor: Colors.red.shade400,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -96,7 +106,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "Terima Kasih!",
+                  AppTranslations.get('Thank You!'),
                   style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -105,7 +115,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  "Maklum balas anda telah dihantar.",
+                  AppTranslations.get('Your feedback has been sent.'),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
@@ -131,7 +141,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           child: Center(
                             child: Text(
-                              "Tutup",
+                              AppTranslations.get('Close'),
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
                                 color: Colors.white,
@@ -154,7 +164,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Gagal menghantar maklum balas"),
+          content: Text(AppTranslations.get('Failed to send feedback')),
           backgroundColor: Colors.red.shade400,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -181,7 +191,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(
-            "Maklum Balas",
+            AppTranslations.get('Feedback'),
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -228,7 +238,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          "Hantar Maklum Balas",
+                          AppTranslations.get('Send Feedback'),
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -239,7 +249,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      "Jenis Maklum Balas",
+                      AppTranslations.get('Feedback Type'),
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -277,7 +287,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                     color: const Color(0xFF0D7377),
                                   ),
                                   const SizedBox(width: 10),
-                                  Text(t),
+                                  Text(_translateType(t)),
                                 ],
                               ),
                             );
@@ -290,7 +300,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      "Penilaian",
+                      AppTranslations.get('Rating'),
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -327,7 +337,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      "Mesej",
+                      AppTranslations.get('Message'),
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -345,7 +355,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                         maxLines: 6,
                         style: GoogleFonts.poppins(fontSize: 14),
                         decoration: InputDecoration(
-                          hintText: "Taip maklum balas atau cadangan anda...",
+                          hintText: AppTranslations.get('Type your feedback or suggestion...'),
                           hintStyle: GoogleFonts.poppins(
                             color: Colors.grey.shade400,
                             fontSize: 13,
@@ -397,7 +407,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
                                         const Icon(Icons.send_rounded, color: Colors.white, size: 20),
                                         const SizedBox(width: 8),
                                         Text(
-                                          "Hantar",
+                                          AppTranslations.get('Send'),
                                           style: GoogleFonts.poppins(
                                             fontSize: 16,
                                             fontWeight: FontWeight.bold,

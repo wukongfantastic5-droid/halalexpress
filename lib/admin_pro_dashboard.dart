@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'translations.dart';
 
 class AdminProDashboard extends StatefulWidget {
   const AdminProDashboard({super.key});
@@ -232,13 +233,13 @@ class _AdminProDashboardState extends State<AdminProDashboard> with TickerProvid
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildStatCard(
-                  "Jumlah Pendapatan",
+                  AppTranslations.get('Total Earnings'),
                   "RM ${totalRevenue.toStringAsFixed(2)}",
                   Icons.account_balance_wallet_rounded,
                   Color(0xFF14C38E),
                 ),
                 SizedBox(height: 20),
-                _buildSectionHeader("Pendapatan Bulanan", Icons.bar_chart_rounded),
+                _buildSectionHeader(AppTranslations.get('Monthly Earnings'), Icons.bar_chart_rounded),
                 SizedBox(height: 12),
                 _buildChartCard(
                   monthlyIncome.isEmpty
@@ -246,7 +247,7 @@ class _AdminProDashboardState extends State<AdminProDashboard> with TickerProvid
                           height: 250,
                           child: Center(
                             child: Text(
-                              "Tiada data pendapatan",
+                                AppTranslations.get('No earnings data'),
                               style: GoogleFonts.poppins(
                                 color: Colors.white.withOpacity(0.6),
                                 fontSize: 14,
@@ -360,7 +361,7 @@ class _AdminProDashboardState extends State<AdminProDashboard> with TickerProvid
                           ),
                         ),
                 ),
-                _buildSectionHeader("Trend Pendapatan", Icons.trending_up_rounded),
+                _buildSectionHeader(AppTranslations.get('Earnings Trend'), Icons.trending_up_rounded),
                 SizedBox(height: 12),
                 _buildChartCard(
                   monthlyIncome.isEmpty
@@ -368,7 +369,7 @@ class _AdminProDashboardState extends State<AdminProDashboard> with TickerProvid
                           height: 250,
                           child: Center(
                             child: Text(
-                              "Tiada data trend",
+                                AppTranslations.get('No trend data'),
                               style: GoogleFonts.poppins(
                                 color: Colors.white.withOpacity(0.6),
                                 fontSize: 14,
@@ -497,7 +498,7 @@ class _AdminProDashboardState extends State<AdminProDashboard> with TickerProvid
                           ),
                         ),
                 ),
-                _buildSectionHeader("Prestasi Rider", Icons.emoji_events_rounded),
+                _buildSectionHeader(AppTranslations.get('Rider Performance'), Icons.emoji_events_rounded),
                 SizedBox(height: 12),
                 _buildChartCard(
                   sortedRiders.isEmpty
@@ -505,7 +506,7 @@ class _AdminProDashboardState extends State<AdminProDashboard> with TickerProvid
                           padding: EdgeInsets.all(20),
                           child: Center(
                             child: Text(
-                              "Tiada data rider",
+                                AppTranslations.get('No rider data'),
                               style: GoogleFonts.poppins(
                                 color: Colors.white.withOpacity(0.6),
                                 fontSize: 14,
@@ -586,7 +587,7 @@ class _AdminProDashboardState extends State<AdminProDashboard> with TickerProvid
                                         ),
                                         SizedBox(height: 2),
                                         Text(
-                                          "Siap: ${e.value.completedOrders} | Batal: ${e.value.cancelledOrders}",
+                                          "${AppTranslations.get('Completed Orders')}: ${e.value.completedOrders} | ${AppTranslations.get('Cancelled Orders')}: ${e.value.cancelledOrders}",
                                           style: GoogleFonts.poppins(
                                             fontSize: 11,
                                             color: Colors.white.withOpacity(0.6),

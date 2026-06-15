@@ -72,7 +72,7 @@ class _InitializeScreenState extends State<InitializeScreen>
     // Request install permission at app launch (Android only)
     if (Platform.isAndroid) {
       try {
-        final allowed = await MethodChannel("com.kampungrider/install_permission")
+        final allowed = await MethodChannel("com.halalexpress/install_permission")
             .invokeMethod<bool>("canRequestPackageInstalls");
         if (allowed != true && mounted) {
           await showDialog(
@@ -91,7 +91,7 @@ class _InitializeScreenState extends State<InitializeScreen>
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(ctx);
-                    MethodChannel("com.kampungrider/install_permission")
+                    MethodChannel("com.halalexpress/install_permission")
                         .invokeMethod("openInstallSettings");
                   },
                   child: Text("Buka Seting", style: GoogleFonts.poppins()),
@@ -252,7 +252,7 @@ class _InitializeScreenState extends State<InitializeScreen>
                               child: Column(
                                 children: [
                                   Text(
-                                    "BunnyFresh",
+                                    "HalalExpress",
                                     style: GoogleFonts.poppins(
                                       fontSize: 28,
                                       fontWeight: FontWeight.bold,

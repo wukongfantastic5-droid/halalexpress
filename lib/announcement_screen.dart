@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'translations.dart';
 
 class AnnouncementScreen extends StatefulWidget {
   const AnnouncementScreen({super.key});
@@ -68,8 +69,8 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
           SnackBar(
             content: Text(
               value
-                  ? "Aplikasi dalam mod offline (penyelenggaraan)"
-                  : "Aplikasi dalam mod online (aktif)",
+                  ? "App offline (maintenance)"
+                  : "App online (active)",
             ),
             backgroundColor: value ? Colors.orange : Colors.green,
           ),
@@ -80,7 +81,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Gagal menukar status"),
+            content: Text("Failed to toggle status"),
             backgroundColor: Colors.red,
           ),
         );
@@ -144,22 +145,22 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
-          "Padam Pengumuman",
+          "Delete Announcement",
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         content: Text(
-          "Adakah anda pasti mahu memadam pengumuman ini?",
+          "Are you sure you want to delete this announcement?",
           style: GoogleFonts.poppins(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text("Batal", style: GoogleFonts.poppins()),
+            child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins()),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
-              "Padam",
+              AppTranslations.get('Delete'),
               style: GoogleFonts.poppins(color: Colors.red),
             ),
           ),
@@ -174,7 +175,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Pengumuman dipadam"),
+          content: const Text("Announcement deleted"),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -185,7 +186,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Gagal memadam"),
+          content: const Text("Failed to delete"),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -257,8 +258,8 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                           children: [
                             Text(
                               isUnderMaintenance
-                                  ? "Offline (Penyelenggaraan)"
-                                  : "Online (Aktif)",
+                                  ? "Offline (Maintenance)"
+                                  : AppTranslations.get('Online (Active)'),
                               style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
@@ -267,8 +268,8 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                             ),
                             Text(
                               isUnderMaintenance
-                                  ? "Pengguna tidak boleh log masuk"
-                                  : "Pengguna boleh log masuk",
+                                  ? AppTranslations.get('Users cannot login')
+                                  : AppTranslations.get('Users can login'),
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
                                 color: Colors.white.withOpacity(0.8),
@@ -301,7 +302,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                   if (isUnderMaintenance) ...[
                     const SizedBox(height: 14),
                     Text(
-                      "Pengguna tidak boleh log masuk sehingga mod offline ditutup.",
+                      AppTranslations.get('Users cannot login until offline mode is turned off.'),
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: Colors.white.withOpacity(0.8),
@@ -355,7 +356,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        "Buat Pengumuman",
+                        "Create Announcement",
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -368,8 +369,8 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                   TextField(
                     controller: titleController,
                     decoration: InputDecoration(
-                      labelText: "Tajuk",
-                      hintText: "Masukkan tajuk pengumuman",
+                      labelText: "Title",
+                      hintText: "Enter announcement title",
                       hintStyle: GoogleFonts.poppins(
                         color: Colors.grey.shade400,
                         fontSize: 13,
@@ -400,8 +401,8 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                     controller: messageController,
                     maxLines: 5,
                     decoration: InputDecoration(
-                      labelText: "Pemberitahuan terkini",
-                      hintText: "Masukkan mesej pengumuman",
+                      labelText: "Latest notification",
+                      hintText: "Enter announcement message",
                       hintStyle: GoogleFonts.poppins(
                         color: Colors.grey.shade400,
                         fontSize: 13,
@@ -445,7 +446,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                               ),
                             )
                           : Text(
-                              "Hantar pesanan",
+                              AppTranslations.get('Send announcement'),
                               style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -475,7 +476,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  "Sejarah Pengumuman",
+                  "Announcement History",
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -536,7 +537,7 @@ class _AnnouncementScreenState extends State<AnnouncementScreen> {
                           Icon(Icons.mail_outline, size: 48, color: Colors.grey.shade300),
                           const SizedBox(height: 8),
                           Text(
-                            "Tiada pengumuman",
+                            AppTranslations.get('No announcements'),
                             style: GoogleFonts.poppins(
                               color: Colors.grey.shade500,
                               fontSize: 14,

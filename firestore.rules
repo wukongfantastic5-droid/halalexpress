@@ -98,6 +98,16 @@ service cloud.firestore {
     }
 
     // =========================
+    // ADMIN LOGIN KEYS (2FA)
+    // =========================
+    match /admin_login_keys/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if false;
+    }
+
+    // =========================
     // TOP-UP REQUESTS
     // =========================
     match /topup_requests/{docId} {

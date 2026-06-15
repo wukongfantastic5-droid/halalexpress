@@ -43,6 +43,25 @@
           "other_platform_oauth_client": []
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:378751422000:android:14aae9e3fba763cc6e27f5",
+        "android_client_info": {
+          "package_name": "com.halalexpress.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyHR-z6vty37zHSWD_jjdgvG1ScEelinI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"

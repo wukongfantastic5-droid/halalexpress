@@ -1,4 +1,4 @@
-# BunnyFresh
+# HalalExpress
 
 A new Flutter project.
 

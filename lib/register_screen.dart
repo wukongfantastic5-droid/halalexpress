@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'place_search_field.dart';
+import 'translations.dart';
 
 class RegisterScreen extends StatefulWidget {
   @override
@@ -132,7 +133,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 ),
                 SizedBox(height: 24),
                 Text(
-                  "Mencari lokasi anda...",
+                  AppTranslations.get('Finding your location...'),
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -141,7 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 ),
                 SizedBox(height: 10),
                 Text(
-                  "Sila tunggu sementara kami mengesan GPS anda.",
+                  AppTranslations.get('Please wait while we locate your GPS.'),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     color: Colors.grey.shade600,
@@ -172,7 +173,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Sila hidupkan GPS"),
+            content: Text(AppTranslations.get('Please enable GPS')),
             backgroundColor: Colors.red,
           ),
         );
@@ -199,7 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Lokasi berjaya dikesan"),
+          content: Text(AppTranslations.get('Location detected successfully')),
           backgroundColor: Colors.green,
         ),
       );
@@ -210,7 +211,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Gagal mendapatkan lokasi"),
+          content: Text(AppTranslations.get('Failed to get location')),
           backgroundColor: Colors.red,
         ),
       );
@@ -255,7 +256,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    "Sila lengkapkan semua ruangan",
+                    AppTranslations.get('Please fill all fields'),
                     style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -297,7 +298,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    "Kata laluan mesti mengandungi:\n- Minimum 6 aksara\n- 1 nombor\n- 1 simbol",
+                    AppTranslations.get('Password must contain:\n- Minimum 6 characters\n- 1 number\n- 1 symbol'),
                     style: GoogleFonts.poppins(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -326,7 +327,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           setState(() => loading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Sila lengkapkan semua dokumen rider"),
+              content: Text(AppTranslations.get('Please complete all rider documents')),
               backgroundColor: Colors.red,
             ),
           );
@@ -336,7 +337,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           setState(() => loading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text("Sila pilih bank dan masukkan nombor akaun"),
+              content: Text(AppTranslations.get('Please select bank and enter account number')),
               backgroundColor: Colors.red,
             ),
           );
@@ -353,7 +354,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         setState(() => loading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Nama akaun sudah digunakan"),
+            content: Text(AppTranslations.get('Account name already in use')),
             backgroundColor: Colors.red,
           ),
         );
@@ -438,8 +439,8 @@ class _RegisterScreenState extends State<RegisterScreen>
         SnackBar(
           content: Text(
             selectedRole == "rider"
-                ? "Pendaftaran rider berjaya. Menunggu pengesahan admin."
-                : "Pendaftaran berjaya",
+                ? AppTranslations.get('Rider registration successful. Awaiting admin verification.')
+                : AppTranslations.get('Registration successful'),
           ),
           backgroundColor: Colors.green,
         ),
@@ -449,12 +450,12 @@ class _RegisterScreenState extends State<RegisterScreen>
     } on FirebaseAuthException catch (e) {
       setState(() => loading = false);
 
-      String message = "Pendaftaran gagal";
+      String message = AppTranslations.get('Registration failed');
       if (e.code == "email-already-in-use")
-        message = "Email sudah digunakan";
+        message = AppTranslations.get('Email already in use');
       else if (e.code == "invalid-email")
-        message = "Email tidak sah";
-      else if (e.code == "weak-password") message = "Kata laluan terlalu lemah";
+        message = AppTranslations.get('Invalid email');
+      else if (e.code == "weak-password") message = AppTranslations.get('Password too weak');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -467,7 +468,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       debugPrint("REGISTER ERROR: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Ralat: $e"),
+          content: Text("${AppTranslations.get('Error')}: $e"),
           backgroundColor: Colors.red,
         ),
       );
@@ -494,7 +495,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 ),
               ),
               const SizedBox(height: 20),
-              Text("Pilih Sumber", style: GoogleFonts.poppins(
+              Text(AppTranslations.get('Select Source'), style: GoogleFonts.poppins(
                 fontSize: 16, fontWeight: FontWeight.w600,
               )),
               const SizedBox(height: 16),
@@ -503,12 +504,12 @@ class _RegisterScreenState extends State<RegisterScreen>
                 children: [
                   _sourceOption(
                     icon: Icons.camera_alt,
-                    label: "Kamera",
+                    label: AppTranslations.get('Camera'),
                     source: ImageSource.camera,
                   ),
                   _sourceOption(
                     icon: Icons.photo_library,
-                    label: "Galeri",
+                    label: AppTranslations.get('Gallery'),
                     source: ImageSource.gallery,
                   ),
                 ],
@@ -771,7 +772,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                       ),
                       SizedBox(height: 16),
                       Text(
-                        "Daftar Akaun",
+                        AppTranslations.get('Register Account'),
                         style: GoogleFonts.poppins(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
@@ -780,7 +781,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                       ),
                       SizedBox(height: 8),
                       Text(
-                        "Sertai BunnyFresh sekarang",
+                        AppTranslations.get('Join HalalExpress now'),
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           color: Colors.white.withOpacity(0.8),
@@ -825,7 +826,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   Expanded(
                                     child: _roleOption(
                                       icon: Icons.person_outline,
-                                      label: "Pelanggan",
+                                      label: AppTranslations.get('Customer'),
                                       value: "customer",
                                     ),
                                   ),
@@ -833,7 +834,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   Expanded(
                                     child: _roleOption(
                                       icon: Icons.motorcycle,
-                                      label: "Rider",
+                                      label: AppTranslations.get('Rider'),
                                       value: "rider",
                                     ),
                                   ),
@@ -842,27 +843,27 @@ class _RegisterScreenState extends State<RegisterScreen>
                             ),
                             _buildField(
                               controller: fullName,
-                              label: "Nama Penuh",
+                              label: AppTranslations.get('Full Name'),
                               icon: Icons.person_outline,
                             ),
                             _buildField(
                               controller: email,
-                              label: "Email",
+                              label: AppTranslations.get('Email'),
                               icon: Icons.email_outlined,
                             ),
                             _buildField(
                               controller: whatsapp,
-                              label: "Nombor WhatsApp",
+                              label: AppTranslations.get('WhatsApp Number'),
                               icon: Icons.phone_outlined,
                             ),
                             _buildField(
                               controller: accountName,
-                              label: "Nama Akaun",
+                              label: AppTranslations.get('Account Name'),
                               icon: Icons.account_circle_outlined,
                             ),
                             _buildField(
                               controller: password,
-                              label: "Kata Laluan",
+                              label: AppTranslations.get('Password'),
                               icon: Icons.lock_outline,
                               obscure: true,
                             ),
@@ -973,7 +974,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                             color: const Color(0xFFFCD34D)),
                                         const SizedBox(width: 8),
                                         Text(
-                                          "Dokumen Rider",
+                                          AppTranslations.get('Rider Documents'),
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
@@ -984,7 +985,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     ),
                                     const SizedBox(height: 12),
                                     _imageCard(
-                                      label: "Gambar Diri (Selfie)",
+                                      label: AppTranslations.get('Selfie Photo'),
                                       bytes: riderPhoto,
                                       fallbackIcon: Icons.person,
                                       onPick: () async {
@@ -994,7 +995,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       },
                                     ),
                                     _imageCard(
-                                      label: "Lesen Memandu (Depan)",
+                                      label: AppTranslations.get('License (Front)'),
                                       bytes: licenseFront,
                                       fallbackIcon: Icons.credit_card,
                                       onPick: () async {
@@ -1004,7 +1005,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       },
                                     ),
                                     _imageCard(
-                                      label: "Lesen Memandu (Belakang)",
+                                      label: AppTranslations.get('License (Back)'),
                                       bytes: licenseBack,
                                       fallbackIcon: Icons.credit_card,
                                       onPick: () async {
@@ -1014,7 +1015,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       },
                                     ),
                                     _imageCard(
-                                      label: "Cukai Jalan Motor",
+                                      label: AppTranslations.get('Road Tax'),
                                       bytes: roadTax,
                                       fallbackIcon: Icons.description,
                                       onPick: () async {
@@ -1024,7 +1025,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       },
                                     ),
                                     _imageCard(
-                                      label: "Gambar Motor (Plat Jelas)",
+                                      label: AppTranslations.get('Motorcycle Photo'),
                                       bytes: motorcyclePhoto,
                                       fallbackIcon: Icons.motorcycle,
                                       onPick: () async {
@@ -1034,7 +1035,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       },
                                     ),
                                     _imageCard(
-                                      label: "Insurans Motor",
+                                      label: AppTranslations.get('Insurance'),
                                       bytes: insurance,
                                       fallbackIcon: Icons.receipt,
                                       onPick: () async {
@@ -1045,7 +1046,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     ),
                                     const SizedBox(height: 16),
                                     Text(
-                                      "Maklumat Bank (Untuk Pengeluaran)",
+                                      AppTranslations.get('Bank Info (For Withdrawal)'),
                                       style: GoogleFonts.poppins(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
@@ -1068,7 +1069,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                         onChanged: (v) => setState(() => _bankType = v ?? ""),
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
-                                          hintText: "Pilih Bank",
+                                          hintText: AppTranslations.get('Select Bank'),
                                           hintStyle: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade500),
                                         ),
                                         dropdownColor: Colors.white,
@@ -1079,7 +1080,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                     const SizedBox(height: 10),
                                     _buildField(
                                       controller: _bankAccountCtrl,
-                                      label: "Nombor Akaun Bank",
+                                      label: AppTranslations.get('Bank Account Number'),
                                       icon: Icons.credit_card,
                                     ),
                                   ],
@@ -1117,7 +1118,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                   ? CircularProgressIndicator(
                                       color: Colors.white)
                                   : Text(
-                                      "Daftar Akaun",
+                                      AppTranslations.get('Register Account'),
                                       style: GoogleFonts.poppins(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,

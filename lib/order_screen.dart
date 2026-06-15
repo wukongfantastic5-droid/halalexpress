@@ -15,6 +15,7 @@ import 'package:installed_apps/installed_apps.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'notification_service.dart';
 import 'tracking_map_screen.dart';
+import 'translations.dart';
 import 'widgets/order_timeline.dart';
 
 String formatItems(dynamic items) {
@@ -33,13 +34,13 @@ String formatItems(dynamic items) {
 String _statusLabel(String? status) {
   switch (status) {
     case "pending":
-      return "Menunggu";
+      return AppTranslations.get('Pending');
     case "accepted":
-      return "Dijemput";
+      return AppTranslations.get('Picked Up');
     case "on the way":
-      return "Dalam Perjalanan";
+      return AppTranslations.get('In Transit');
     case "delivered":
-      return "Selesai";
+      return AppTranslations.get('Completed');
     default:
       return status ?? "";
   }
@@ -122,6 +123,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
   @override
   void initState() {
     super.initState();
+    AppTranslations.languageNotifier.addListener(_onLangChange);
     _fadeController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 600),
@@ -136,6 +138,10 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
     drop.addListener(_onDropTextChanged);
   }
 
+  void _onLangChange() {
+    if (mounted) setState(() {});
+  }
+
   void _syncControllers() {
     while (_itemControllers.length < _items.length) {
       _itemControllers.add(TextEditingController());
@@ -147,6 +153,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
 
   @override
   void dispose() {
+    AppTranslations.languageNotifier.removeListener(_onLangChange);
     _fadeController.dispose();
     for (var c in _itemControllers) {
       c.dispose();
@@ -308,7 +315,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
       final url = Uri.parse(
         "https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(query)}&format=json&limit=1&countrycodes=my",
       );
-      final res = await http.get(url, headers: {"User-Agent": "BunnyFresh/1.0"}).timeout(const Duration(seconds: 10));
+      final res = await http.get(url, headers: {"User-Agent": "HalalExpress/1.0"}).timeout(const Duration(seconds: 10));
       if (res.statusCode != 200) throw Exception("Nominatim ${res.statusCode}");
       final data = jsonDecode(res.body) as List;
       if (data.isEmpty) {
@@ -350,7 +357,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
       final url = Uri.parse(
         "https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(query)}&format=json&limit=1&countrycodes=my",
       );
-      final res = await http.get(url, headers: {"User-Agent": "BunnyFresh/1.0"}).timeout(const Duration(seconds: 10));
+      final res = await http.get(url, headers: {"User-Agent": "HalalExpress/1.0"}).timeout(const Duration(seconds: 10));
       if (res.statusCode != 200) throw Exception("Nominatim ${res.statusCode}");
       final data = jsonDecode(res.body) as List;
       if (data.isEmpty) {
@@ -431,7 +438,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
 
       try {
         final shopUrl = Uri.parse("https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(preset["shop"].toString())}&format=json&limit=1&countrycodes=my");
-        final shopRes = await http.get(shopUrl, headers: {"User-Agent": "BunnyFresh/1.0"}).timeout(const Duration(seconds: 10));
+        final shopRes = await http.get(shopUrl, headers: {"User-Agent": "HalalExpress/1.0"}).timeout(const Duration(seconds: 10));
         if (shopRes.statusCode == 200) {
           final sd = jsonDecode(shopRes.body) as List;
           if (sd.isNotEmpty) { sLat = double.tryParse(sd[0]["lat"] ?? ""); sLng = double.tryParse(sd[0]["lon"] ?? ""); }
@@ -440,7 +447,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
 
       try {
         final dropUrl = Uri.parse("https://nominatim.openstreetmap.org/search?q=${Uri.encodeComponent(preset["drop"].toString())}&format=json&limit=1&countrycodes=my");
-        final dropRes = await http.get(dropUrl, headers: {"User-Agent": "BunnyFresh/1.0"}).timeout(const Duration(seconds: 10));
+        final dropRes = await http.get(dropUrl, headers: {"User-Agent": "HalalExpress/1.0"}).timeout(const Duration(seconds: 10));
         if (dropRes.statusCode == 200) {
           final dd = jsonDecode(dropRes.body) as List;
           if (dd.isNotEmpty) { dLat = double.tryParse(dd[0]["lat"] ?? ""); dLng = double.tryParse(dd[0]["lon"] ?? ""); }
@@ -491,7 +498,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
           title: Row(children: [
             Icon(Icons.check_circle, color: Colors.amber, size: 28),
             SizedBox(width: 10),
-            Text("Selesai", style: GoogleFonts.poppins(color: Colors.white)),
+            Text(AppTranslations.get('Completed'), style: GoogleFonts.poppins(color: Colors.white)),
           ]),
           content: Text("${checked.length} pesanan debug telah dihantar.",
             style: GoogleFonts.poppins(color: Colors.white.withOpacity(0.8)),
@@ -606,7 +613,13 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
     }
   }
 
-  void _showPaymentDialog(double fare) {
+  Future<void> _showPaymentDialog(double fare) async {
+    final adminSnap = await firestore.collection("users").where("role", isEqualTo: "admin").limit(1).get();
+    String adminWhatsApp = adminSnap.docs.isNotEmpty ? (adminSnap.docs.first.data()["whatsapp"] as String? ?? "") : "";
+    adminWhatsApp = adminWhatsApp.replaceAll(RegExp(r'[^0-9]'), '');
+    if (!adminWhatsApp.startsWith("60") && adminWhatsApp.isNotEmpty) adminWhatsApp = "60$adminWhatsApp";
+
+    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -627,7 +640,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        "Bayaran Penghantaran",
+                        AppTranslations.get('Delivery Payment'),
                         style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377)),
                       ),
                       const SizedBox(height: 8),
@@ -697,7 +710,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                         child: ElevatedButton.icon(
                           onPressed: () => _showBankSheet(context),
                           icon: const Icon(Icons.account_balance, size: 18),
-                          label: Text("Buka Bank", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                          label: Text(AppTranslations.get('Select Bank App'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: const Color(0xFF0D7377),
@@ -714,7 +727,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                         child: ElevatedButton.icon(
                           onPressed: () {
                             final msg = "Saya telah membuat bayaran RM${fare.toStringAsFixed(2)} untuk pesanan. Sila sahkan pembayaran.";
-                            final url = "https://wa.me/60123456789?text=${Uri.encodeComponent(msg)}";
+                            final url = "https://wa.me/$adminWhatsApp?text=${Uri.encodeComponent(msg)}";
                             launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
                             Navigator.pop(ctx);
                             if (ctx.mounted) {
@@ -740,7 +753,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: Text("Tutup", style: GoogleFonts.poppins(color: Colors.grey.shade500, fontSize: 12)),
+                        child: Text(AppTranslations.get('Close'), style: GoogleFonts.poppins(color: Colors.grey.shade500, fontSize: 12)),
                       ),
                     ],
                   ),
@@ -787,13 +800,13 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                 child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
               ),
               const SizedBox(height: 20),
-              Text("Buka Aplikasi Bank", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+              Text(AppTranslations.get('Select Bank App'), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 16),
               if (installed.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 24),
                   child: Center(
-                    child: Text("Tiada app bank dijumpai", style: GoogleFonts.poppins(color: Colors.grey)),
+                    child: Text("No bank apps found", style: GoogleFonts.poppins(color: Colors.grey)),
                   ),
                 )
               else
@@ -933,7 +946,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text("Edit Pesanan", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+          title: Text(AppTranslations.get('Edit Order'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -987,13 +1000,13 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                     setDialogState(() {});
                   },
                   icon: const Icon(Icons.add, size: 18),
-                  label: Text("Tambah Barang"),
+                  label: Text(AppTranslations.get('Add Item')),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: shopCtrl,
                   decoration: InputDecoration(
-                    labelText: "Nama Kedai",
+                    labelText: AppTranslations.get('Shop Name'),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
@@ -1002,7 +1015,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                   controller: detailsCtrl,
                   maxLines: 3,
                   decoration: InputDecoration(
-                    labelText: "Butiran",
+                    labelText: AppTranslations.get('Details'),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
@@ -1012,11 +1025,11 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text("Batal", style: GoogleFonts.poppins()),
+              child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins()),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text("Simpan", style: GoogleFonts.poppins(color: const Color(0xFF0D7377))),
+              child: Text(AppTranslations.get('Save'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377))),
             ),
           ],
         ),
@@ -1043,7 +1056,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Pesanan dikemas kini"),
+          content: Text(AppTranslations.get('Order updated')),
           backgroundColor: const Color(0xFF14C38E),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1059,16 +1072,16 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Batal Pesanan", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Text("Adakah anda pasti mahu membatalkan pesanan ini?", style: GoogleFonts.poppins(fontSize: 14)),
+        title: Text(AppTranslations.get('Cancel Order'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text("Are you sure you want to cancel this order?", style: GoogleFonts.poppins(fontSize: 14)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text("Tidak", style: GoogleFonts.poppins()),
+            child: Text(AppTranslations.get('No'), style: GoogleFonts.poppins()),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text("Ya, Batalkan", style: GoogleFonts.poppins(color: Colors.red)),
+            child: Text("${AppTranslations.get('Yes')}, ${AppTranslations.get('Cancel')}", style: GoogleFonts.poppins(color: Colors.red)),
           ),
         ],
       ),
@@ -1081,7 +1094,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text("Pesanan dibatalkan"),
+          content: Text(AppTranslations.get('Order cancelled')),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1112,7 +1125,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(
-            "Pesanan Pelanggan",
+            AppTranslations.get("Customer's Order"),
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -1169,7 +1182,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                           ),
                           SizedBox(width: 10),
                           Text(
-                            "Butiran Pesanan",
+                            AppTranslations.get('Order Details'),
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -1220,7 +1233,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                                     color: const Color(0xFF0D7377),
                                   ),
                                   decoration: InputDecoration(
-                                    hintText: "Nama barang",
+                                    hintText: AppTranslations.get('Item name'),
                                     hintStyle: GoogleFonts.poppins(
                                       color: const Color(0xFF0D7377).withOpacity(0.35),
                                       fontSize: 13,
@@ -1311,7 +1324,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                             },
                             icon: Icon(Icons.add, color: const Color(0xFF0D7377), size: 20),
                             label: Text(
-                              "Tambah Barang",
+                              AppTranslations.get('Add Item'),
                               style: GoogleFonts.poppins(
                                 color: const Color(0xFF0D7377),
                                 fontSize: 14,
@@ -1323,20 +1336,20 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                       ),
                       _buildField(
                         controller: shopName,
-                        label: "Nama Kedai",
+                        label: AppTranslations.get('Shop Name'),
                         hint: "Contoh: NSK Selayang / 7-Eleven",
                         icon: Icons.store_outlined,
                       ),
                       _buildField(
                         controller: details,
-                        label: "Butiran tambahan",
-                        hint: "Contoh: Tinggalkan di pondok pengawal",
+                        label: AppTranslations.get('Details'),
+                        hint: "e.g. Leave at guardhouse",
                         icon: Icons.notes_rounded,
                         maxLines: 4,
                       ),
                       SizedBox(height: 14),
                       Text(
-                        "Lokasi Penghantaran",
+                        AppTranslations.get('Delivery Location'),
                         style: GoogleFonts.poppins(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -1364,7 +1377,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                               child: TextField(
                                 controller: drop,
                                 decoration: InputDecoration(
-                                  hintText: "Cari lokasi penghantaran",
+                                  hintText: AppTranslations.get('Search delivery location'),
                                   hintStyle: GoogleFonts.poppins(
                                     color: Colors.grey.shade400,
                                     fontSize: 13,
@@ -1487,7 +1500,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                                 ),
                               ),
                               SizedBox(width: 8),
-                              Text("Mengira tambang...",
+                              Text(AppTranslations.get('Calculating...'),
                                 style: GoogleFonts.poppins(
                                   fontSize: 12, color: Colors.white.withOpacity(0.8),
                                 ),
@@ -1533,7 +1546,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                               SizedBox(width: 10),
                               Flexible(
                                 child: Text(
-                                  "Anggaran Tambang: ",
+                                  AppTranslations.get('Estimated Fare:'),
                                   style: GoogleFonts.poppins(
                                     fontSize: 13,
                                     color: Colors.white.withOpacity(0.9),
@@ -1634,7 +1647,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                                   Icon(Icons.send_rounded, color: Colors.white, size: 20),
                                   SizedBox(width: 8),
                                   Text(
-                                    "Hantar Pesanan",
+                                    AppTranslations.get('Submit Order'),
                                     style: GoogleFonts.poppins(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -1660,7 +1673,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                     ),
                     SizedBox(width: 10),
                     Text(
-                      "Pesanan Aktif",
+                      AppTranslations.get('Active Orders'),
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -1709,7 +1722,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                           player.play(AssetSource('audio/job_accept.mp3'));
                         });
                         NotificationService.showOrderNotification(
-                          title: "Pesanan Diterima",
+                          title: "Order Accepted",
                           body: "Rider akan mengambil barang anda",
                           orderId: doc.id,
                         );
@@ -1720,7 +1733,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                           player.play(AssetSource('audio/delivered.mp3'));
                         });
                         NotificationService.showOrderNotification(
-                          title: "Pesanan Selesai",
+                          title: "Order Completed",
                           body: "Barang telah sampai. Jangan lupa nilai rider!",
                           orderId: doc.id,
                         );
@@ -1756,7 +1769,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                             ),
                             SizedBox(height: 12),
                             Text(
-                              "No active orders",
+                              AppTranslations.get('No active orders'),
                               style: GoogleFonts.poppins(
                                 color: Colors.white.withOpacity(0.7),
                                 fontSize: 14,
@@ -1884,7 +1897,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                                     SizedBox(width: 6),
                                     Flexible(
                                       child: Text(
-                                        "Kedai: ${data["shop_name"] ?? ""}",
+                                        "${AppTranslations.get('Shop')}: ${data["shop_name"] ?? ""}",
                                         style: GoogleFonts.poppins(
                                           color: Colors.white.withOpacity(0.85),
                                           fontSize: 12,
@@ -1920,7 +1933,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                                       SizedBox(width: 6),
                                       Expanded(
                                         child: Text(
-                                          "Butiran: ${data["details"]}",
+                                          "${AppTranslations.get('Details')}: ${data["details"]}",
                                           style: GoogleFonts.poppins(
                                             color: Colors.white.withOpacity(0.85),
                                             fontSize: 12,
@@ -1956,7 +1969,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text(
-                                              "Tambang",
+                                              AppTranslations.get('Fare'),
                                               style: GoogleFonts.poppins(
                                                 fontSize: 11,
                                                 color: Colors.white.withOpacity(0.8),
@@ -2013,7 +2026,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                                         _showPaymentDialog(fare);
                                       },
                                       icon: const Icon(Icons.payments_rounded, size: 18),
-                                      label: Text("Bayar Sekarang", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                                      label: Text(AppTranslations.get('Pay Now'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: const Color(0xFFFCD34D),
                                         foregroundColor: const Color(0xFF0D7377),
@@ -2142,10 +2155,6 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                                 ],
                                 SizedBox(height: 12),
                                 OrderTimeline(currentStatus: data["status"] ?? "pending"),
-                                if (data["status"] == "delivered") ...[
-                                  SizedBox(height: 12),
-                                  _buildRatingSection(context, doc.id, data),
-                                ],
                                 if (data["status"] == "pending") ...[
                                   SizedBox(height: 12),
                                   Row(
@@ -2153,7 +2162,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                                       Expanded(
                                         child: _actionButton(
                                           icon: Icons.edit_outlined,
-                                          label: "Edit",
+                                          label: AppTranslations.get('Edit'),
                                           color: const Color(0xFF6366F1),
                                           onTap: () => _editOrder(context, doc.id, data),
                                         ),
@@ -2162,7 +2171,7 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
                                       Expanded(
                                         child: _actionButton(
                                           icon: Icons.cancel_outlined,
-                                          label: "Batal",
+                                          label: AppTranslations.get('Cancel'),
                                           color: const Color(0xFFEF4444),
                                           onTap: () => _cancelOrder(context, doc.id),
                                         ),
@@ -2223,59 +2232,6 @@ class _OrderScreenState extends State<OrderScreen> with TickerProviderStateMixin
         );
       }
     }
-  }
-
-  Widget _buildRatingSection(BuildContext context, String orderId, Map<String, dynamic> data) {
-    final existingRating = data["rider_rating"];
-    return Container(
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.12),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Nilai Rider",
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withOpacity(0.85),
-            ),
-          ),
-          SizedBox(height: 8),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(5, (index) {
-              final starValue = index + 1;
-              final isFilled = existingRating != null && starValue <= existingRating;
-              return GestureDetector(
-                onTap: existingRating != null
-                    ? null
-                    : () {
-                        firestore
-                            .collection("orders")
-                            .doc(orderId)
-                            .update({"rider_rating": starValue});
-                      },
-                child: Padding(
-                  padding: EdgeInsets.only(right: 4),
-                  child: Icon(
-                    isFilled ? Icons.star : Icons.star_border,
-                    color: isFilled ? const Color(0xFFFCD34D) : Colors.white.withOpacity(0.4),
-                    size: 28,
-                  ),
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
-    );
   }
 }
 

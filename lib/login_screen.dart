@@ -11,9 +11,11 @@ import 'package:http/http.dart' as http;
 import 'register_screen.dart';
 import 'gps_service.dart';
 import 'admin_main_nav.dart';
+import 'admin_login_screen.dart';
 import 'user_main_nav.dart';
 import 'rider_main_nav.dart';
 import 'force_update_screen.dart';
+import 'translations.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -32,6 +34,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   bool isLoading = false;
   String appVersion = "";
+  int? _quickRole; // null=none, 0=customer, 1=rider, 2=admin
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -54,8 +57,8 @@ class _LoginScreenState extends State<LoginScreen>
 
       if (!ok && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Sila aktifkan GPS untuk meneruskan"),
+          SnackBar(
+            content: Text(AppTranslations.get('Please enable GPS to continue')),
             backgroundColor: Colors.red,
           ),
         );
@@ -110,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "Sedang log masuk...",
+                  AppTranslations.get('Logging in...'),
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -162,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "Berjaya",
+                  AppTranslations.get('Success'),
                   style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -172,10 +175,10 @@ class _LoginScreenState extends State<LoginScreen>
                 const SizedBox(height: 8),
                   Text(
                     role == "admin"
-                        ? "Login berjaya sebagai Pentadbir"
+                        ? AppTranslations.get('Login successful as Admin')
                         : role == "rider"
-                            ? "Login berjaya sebagai Rider"
-                            : "Login berjaya sebagai Pelanggan",
+                            ? AppTranslations.get('Login successful as Rider')
+                            : AppTranslations.get('Login successful as Customer'),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
@@ -315,7 +318,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "Gagal",
+                  AppTranslations.get('Failed'),
                   style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -344,7 +347,7 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                     ),
                     child: Text(
-                      "Tutup",
+                      AppTranslations.get('Close'),
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -413,7 +416,7 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    "Pengumuman Terkini",
+                    AppTranslations.get('Latest Announcement'),
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -422,7 +425,7 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    data["message"] ?? "Tiada pengumuman",
+                    data["message"] ?? AppTranslations.get('No announcements'),
                     textAlign: TextAlign.center,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
@@ -450,7 +453,7 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                         ),
                         child: Text(
-                          "Tutup",
+                          AppTranslations.get('Close'),
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -509,7 +512,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  "Penyelenggaraan",
+                    AppTranslations.get('Maintenance'),
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -518,7 +521,7 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  "Server sedang dalam penyelenggaraan.\nSila cuba sebentar lagi.",
+                  AppTranslations.get('Server is under maintenance.\nPlease try again later.'),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
@@ -535,7 +538,7 @@ class _LoginScreenState extends State<LoginScreen>
                       },
                       icon: const Icon(Icons.download_rounded, color: Colors.white, size: 20),
                       label: Text(
-                        "Muat Turun Versi Terbaru",
+                        AppTranslations.get('Download Latest Version'),
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
@@ -555,7 +558,7 @@ class _LoginScreenState extends State<LoginScreen>
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
                   child: Text(
-                    "Tutup",
+                    AppTranslations.get('Close'),
                     style: GoogleFonts.poppins(
                       color: const Color(0xFF6B7280),
                       fontSize: 14,
@@ -700,7 +703,7 @@ class _LoginScreenState extends State<LoginScreen>
                   child: Column(
                     children: [
                       Text(
-                        "Selamat Datang ke BunyFresh!",
+                        AppTranslations.get('Welcome to HalalExpress!'),
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
                           fontSize: 18,
@@ -710,10 +713,7 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        "Kami hanya menerima produk HALAL. "
-                        "Semua penghantaran adalah dari kedai-kedai yang "
-                        "telah disahkan halal. Terima kasih kerana "
-                        "memilih kami sebagai rakan penghantaran anda.",
+                        AppTranslations.get('We only accept HALAL products. All deliveries are from verified halal shops. Thank you for choosing us as your delivery partner.'),
                         textAlign: TextAlign.center,
                         style: GoogleFonts.poppins(
                           fontSize: 12.5,
@@ -739,7 +739,7 @@ class _LoginScreenState extends State<LoginScreen>
                       elevation: 0,
                     ),
                     child: Text(
-                      "Saya Faham",
+                        AppTranslations.get('I Understand'),
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -779,7 +779,7 @@ class _LoginScreenState extends State<LoginScreen>
           isLoading = false;
         });
 
-        showFailDialog("Akaun tidak dijumpai");
+        showFailDialog(AppTranslations.get('Account not found'));
         return;
       }
 
@@ -787,6 +787,14 @@ class _LoginScreenState extends State<LoginScreen>
       final uid = userData.id;
       final email = userData["email"];
       final role = userData["role"];
+
+      // Admin only login via "Log Masuk Admin" button (except quick-login)
+      if (role == "admin" && _quickRole != 2) {
+        Navigator.pop(context);
+        setState(() { isLoading = false; });
+        showFailDialog(AppTranslations.get('Admin can only login through the Admin Login button'));
+        return;
+      }
 
       try {
         final settingsDoc = await firestore
@@ -812,7 +820,7 @@ class _LoginScreenState extends State<LoginScreen>
         if (role != "admin") {
           try {
             final res = await http.get(
-              Uri.parse("https://api.github.com/repos/wukongfantastic5-droid/bunnyfresh/releases/latest"),
+              Uri.parse("https://api.github.com/repos/wukongfantastic5-droid/halalexpress/releases/latest"),
               headers: {"Accept": "application/vnd.github.v3+json"},
             );
             if (res.statusCode == 200) {
@@ -863,7 +871,7 @@ class _LoginScreenState extends State<LoginScreen>
         isLoading = false;
       });
 
-      showFailDialog("Login gagal");
+      showFailDialog(AppTranslations.get('Login failed'));
     }
   }
 
@@ -925,7 +933,7 @@ class _LoginScreenState extends State<LoginScreen>
                     const SizedBox(height: 24),
 
                     Text(
-                      "Selamat Datang",
+                      AppTranslations.get('Welcome'),
                       style: GoogleFonts.poppins(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -959,6 +967,38 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
                       child: Column(
                         children: [
+                          // QUICK LOGIN - temporary, remove before production
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.speed, size: 14, color: Colors.amber.shade300),
+                                    const SizedBox(width: 6),
+                                    Text(AppTranslations.get('QUICK LOGIN (alfagroup)'),
+                                        style: GoogleFonts.poppins(fontSize: 10, color: Colors.amber.shade300, fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    _quickCheckbox(0, AppTranslations.get('Customer'), "abu200"),
+                                    const SizedBox(width: 8),
+                                    _quickCheckbox(1, AppTranslations.get('Rider'), "mamat300"),
+                                    const SizedBox(width: 8),
+                                    _quickCheckbox(2, AppTranslations.get('Admin'), "zainal200"),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                           TextField(
                             controller: accountName,
                             style: GoogleFonts.poppins(
@@ -966,7 +1006,7 @@ class _LoginScreenState extends State<LoginScreen>
                               fontSize: 15,
                             ),
                             decoration: InputDecoration(
-                              labelText: "Nama Akaun",
+                              labelText: AppTranslations.get('Account Name'),
                               labelStyle: GoogleFonts.poppins(
                                 color: Colors.white.withValues(alpha: 0.6),
                                 fontSize: 14,
@@ -1007,7 +1047,7 @@ class _LoginScreenState extends State<LoginScreen>
                               fontSize: 15,
                             ),
                             decoration: InputDecoration(
-                              labelText: "Kata Laluan",
+                              labelText: AppTranslations.get('Password'),
                               labelStyle: GoogleFonts.poppins(
                                 color: Colors.white.withValues(alpha: 0.6),
                                 fontSize: 14,
@@ -1078,7 +1118,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     disabledBackgroundColor: Colors.transparent,
                                   ),
                                   child: Text(
-                                    "Log Masuk",
+                                    AppTranslations.get('Login'),
                                     style: GoogleFonts.poppins(
                                       fontSize: 17,
                                       fontWeight: FontWeight.bold,
@@ -1102,11 +1142,40 @@ class _LoginScreenState extends State<LoginScreen>
                               );
                             },
                             child: Text(
-                              "Cipta Akaun Baru",
+                              AppTranslations.get('Create New Account'),
                               style: GoogleFonts.poppins(
                                 color: Colors.white.withValues(alpha: 0.85),
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const AdminLoginScreen(),
+                                  ),
+                                );
+                              },
+                              icon: const Icon(Icons.admin_panel_settings, size: 18),
+                              label: Text(
+                                AppTranslations.get('Admin Login'),
+                                style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0D7377),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                  side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                                ),
+                                elevation: 0,
                               ),
                             ),
                           ),
@@ -1117,7 +1186,7 @@ class _LoginScreenState extends State<LoginScreen>
                     const SizedBox(height: 32),
 
                     Text(
-                      "© Hak Cipta MuslimGroup",
+                      AppTranslations.get('© Copyright MuslimGroup'),
                       style: GoogleFonts.poppins(
                         color: Colors.white.withValues(alpha: 0.45),
                         fontSize: 12,
@@ -1140,6 +1209,55 @@ class _LoginScreenState extends State<LoginScreen>
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _quickCheckbox(int index, String label, String accountNameHint) {
+    final selected = _quickRole == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _quickRole = selected ? null : index;
+            if (_quickRole != null) {
+              final creds = [
+                {"name": "abu200", "pass": "Abu!23"},
+                {"name": "mamat300", "pass": "Mamat!23"},
+                {"name": "zainal200", "pass": "Zainal!23"},
+              ][index];
+              accountName.text = creds["name"]!;
+              password.text = creds["pass"]!;
+            }
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+          decoration: BoxDecoration(
+            color: selected ? Colors.amber.withValues(alpha: 0.2) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: selected ? Colors.amber.shade400 : Colors.white.withValues(alpha: 0.15),
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                selected ? Icons.check_circle : Icons.radio_button_unchecked,
+                size: 16,
+                color: selected ? Colors.amber.shade400 : Colors.white54,
+              ),
+              const SizedBox(height: 2),
+              Text(label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 9,
+                    color: selected ? Colors.amber.shade300 : Colors.white54,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  )),
+            ],
           ),
         ),
       ),

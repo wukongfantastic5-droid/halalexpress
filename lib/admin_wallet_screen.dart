@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'translations.dart';
 
 class AdminWalletScreen extends StatefulWidget {
   const AdminWalletScreen({super.key});
@@ -52,19 +53,19 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Sahkan Top Up", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(AppTranslations.get('Confirm Top Up'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: Text(
-          "Sahkan top up ${_formatRM(amount)} untuk ${data["customer_name"] ?? "pengguna"}?",
+          "${AppTranslations.get('Confirm top up of amount for user')} ${_formatRM(amount)} untuk ${data["customer_name"] ?? AppTranslations.get('Customer')}?",
           style: GoogleFonts.poppins(fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey)),
+            child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text("Sahkan", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600)),
+            child: Text(AppTranslations.get('Confirm'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -91,7 +92,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Top up ${_formatRM(amount)} berjaya disahkan", style: GoogleFonts.poppins()),
+            content: Text("Top up ${_formatRM(amount)} ${AppTranslations.get('Approved')}", style: GoogleFonts.poppins()),
             backgroundColor: const Color(0xFF14C38E),
             behavior: SnackBarBehavior.floating,
           ),
@@ -115,16 +116,16 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Tolak Permohonan", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Text("Tolak permohonan top up ini?", style: GoogleFonts.poppins(fontSize: 13)),
+        title: Text(AppTranslations.get('Reject this top up request?'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text(AppTranslations.get('Reject this top up request?'), style: GoogleFonts.poppins(fontSize: 13)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey)),
+            child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text("Tolak", style: GoogleFonts.poppins(color: Colors.red, fontWeight: FontWeight.w600)),
+            child: Text(AppTranslations.get('Reject'), style: GoogleFonts.poppins(color: Colors.red, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -139,7 +140,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Permohonan ditolak", style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text(AppTranslations.get('Rejected'), style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
@@ -219,7 +220,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
                         child: ElevatedButton.icon(
                           onPressed: _uploadQR,
                           icon: const Icon(Icons.upload_file, size: 16),
-                          label: Text("Muat Naik", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12)),
+                          label: Text(AppTranslations.get('Upload Receipt'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 12)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF0D7377),
                             foregroundColor: Colors.white,
@@ -272,7 +273,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
             TextField(
               controller: _accountCtrl,
               decoration: InputDecoration(
-                labelText: "No. Akaun TnG E-Wallet",
+                labelText: AppTranslations.get('Bank Account Number'),
                 labelStyle: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF0D7377)),
                 hintText: "019-1234567",
                 hintStyle: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 13),
@@ -303,7 +304,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
                 ),
                 child: _accountSaving
                     ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text("Simpan Nombor Akaun", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                    : Text(AppTranslations.get('Save Account Number'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
               ),
             ),
                 ],
@@ -315,7 +316,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
             Row(
               children: [
                 Text(
-                  "Pengesahan Top Up",
+                  AppTranslations.get('Confirm Top Up'),
                   style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -347,13 +348,13 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _filterChip("Semua", "semua"),
+                  _filterChip(AppTranslations.get('All'), "semua"),
                   const SizedBox(width: 8),
-                  _filterChip("Menunggu", "pending"),
+                  _filterChip(AppTranslations.get('Pending'), "pending"),
                   const SizedBox(width: 8),
-                  _filterChip("Disahkan", "approved"),
+                  _filterChip(AppTranslations.get('Approved'), "approved"),
                   const SizedBox(width: 8),
-                  _filterChip("Ditolak", "rejected"),
+                  _filterChip(AppTranslations.get('Rejected'), "rejected"),
                 ],
               ),
             ),
@@ -418,7 +419,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
                         Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade300),
                         const SizedBox(height: 12),
                         Text(
-                          "Tiada permohonan",
+                          AppTranslations.get('No requests'),
                           style: GoogleFonts.poppins(fontSize: 15, color: Colors.grey.shade500),
                         ),
                       ],
@@ -431,14 +432,14 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
                     const SizedBox(height: 24),
                     Row(
                       children: [
-                        Text(
-                          "Sejarah",
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF0D7377),
-                          ),
+                      Text(
+                        AppTranslations.get('History'),
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF0D7377),
                         ),
+                      ),
                         const Spacer(),
                       ],
                     ),
@@ -478,7 +479,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
             Row(
               children: [
                 Text(
-                  "Pengeluaran Rider",
+                  AppTranslations.get('Rider Withdrawals'),
                   style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377)),
                 ),
                 const Spacer(),
@@ -486,7 +487,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "${pending.length} permohonan menunggu",
+              "${pending.length} ${AppTranslations.get('Pending')}",
               style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 16),
@@ -499,7 +500,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
                   children: [
                     Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade300),
                     const SizedBox(height: 12),
-                    Text("Tiada permohonan pengeluaran", style: GoogleFonts.poppins(fontSize: 15, color: Colors.grey.shade500)),
+                    Text(AppTranslations.get('No withdrawal requests'), style: GoogleFonts.poppins(fontSize: 15, color: Colors.grey.shade500)),
                   ],
                 ),
               ),
@@ -508,7 +509,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
             ],
             if (history.isNotEmpty) ...[
               const SizedBox(height: 24),
-              Text("Sejarah", style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF0D7377))),
+              Text(AppTranslations.get('History'), style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF0D7377))),
               const SizedBox(height: 8),
               ...history.map((doc) => _withdrawCard(doc, true)),
             ],
@@ -523,7 +524,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
     final amount = (data["amount"] ?? 0).toDouble();
     final status = data["status"] ?? "pending";
     final createdAt = data["created_at"] as Timestamp?;
-    final riderName = data["rider_name"] ?? "Rider";
+    final riderName = data["rider_name"] ?? AppTranslations.get('Rider');
     final bankType = data["bank_type"] ?? "-";
     final bankAccount = data["bank_account"] ?? "-";
 
@@ -534,15 +535,15 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
     switch (status) {
       case "approved":
         statusColor = const Color(0xFF14C38E);
-        statusText = "Disahkan";
+        statusText = AppTranslations.get('Approved');
         break;
       case "rejected":
         statusColor = Colors.red;
-        statusText = "Ditolak";
+        statusText = AppTranslations.get('Rejected');
         break;
       default:
         statusColor = const Color(0xFFFFA000);
-        statusText = "Menunggu";
+        statusText = AppTranslations.get('Pending');
     }
 
     return Container(
@@ -599,7 +600,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
-                      child: Text("Sahkan", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                      child: Text(AppTranslations.get('Confirm'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
                     ),
                   ),
                 ),
@@ -616,7 +617,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
-                      child: Text("Tolak", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                      child: Text(AppTranslations.get('Reject'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
                     ),
                   ),
                 ),
@@ -638,14 +639,14 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Sahkan Pengeluaran", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(AppTranslations.get('Confirm Withdrawal'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: Text(
-          "Sahkan pengeluaran ${_formatRM(amount)} untuk ${data["rider_name"] ?? "rider"}?\n\nJumlah akan ditolak dari dompet rider.",
+          "${AppTranslations.get('Confirm withdrawal for rider')} ${_formatRM(amount)} untuk ${data["rider_name"] ?? AppTranslations.get('Rider')}?",
           style: GoogleFonts.poppins(fontSize: 13),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Sahkan", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppTranslations.get('Confirm'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -669,7 +670,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Pengeluaran disahkan", style: GoogleFonts.poppins()), backgroundColor: const Color(0xFF14C38E), behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text(AppTranslations.get('Withdrawal confirmed'), style: GoogleFonts.poppins()), backgroundColor: const Color(0xFF14C38E), behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
@@ -686,11 +687,11 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Tolak Pengeluaran", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        content: Text("Tolak permohonan pengeluaran ini?", style: GoogleFonts.poppins(fontSize: 13)),
+        title: Text(AppTranslations.get('Reject Withdrawal'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: Text(AppTranslations.get('Reject this withdrawal request?'), style: GoogleFonts.poppins(fontSize: 13)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Tolak", style: GoogleFonts.poppins(color: Colors.red, fontWeight: FontWeight.w600))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppTranslations.get('Reject'), style: GoogleFonts.poppins(color: Colors.red, fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -704,7 +705,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Permohonan ditolak", style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
+          SnackBar(content: Text(AppTranslations.get('Rejected'), style: GoogleFonts.poppins()), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
@@ -758,7 +759,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
         fontSize: 12,
       );
 
-      final headers = ["Pelanggan", "No. WhatsApp", "Jumlah", "Bank", "Status", "Tarikh Mohon", "Tarikh Sah/Tolak"];
+      final headers = [AppTranslations.get('Customer'), AppTranslations.get('WhatsApp Number'), AppTranslations.get('Total'), AppTranslations.get('Bank'), AppTranslations.get('Status'), AppTranslations.get('Date Applied'), AppTranslations.get('Date Resolved')];
       for (var i = 0; i < headers.length; i++) {
         final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0));
         cell.value = TextCellValue(headers[i]);
@@ -772,17 +773,17 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
         final resolved = (d["approved_at"] as Timestamp?)?.toDate() ?? (d["rejected_at"] as Timestamp?)?.toDate();
 
         final statusMap = {
-          "pending": "Menunggu",
-          "approved": "Disahkan",
-          "rejected": "Ditolak",
+          "pending": AppTranslations.get('Pending'),
+          "approved": AppTranslations.get('Approved'),
+          "rejected": AppTranslations.get('Rejected'),
         };
 
         final values = [
-          d["customer_name"] ?? "Pengguna",
+          d["customer_name"] ?? AppTranslations.get('Customer'),
           d["customer_whatsapp"] ?? "-",
           "RM ${(d["amount"] ?? 0).toStringAsFixed(2)}",
           d["bank"] ?? "-",
-          statusMap[d["status"]] ?? d["status"] ?? "Menunggu",
+          statusMap[d["status"]] ?? d["status"] ?? AppTranslations.get('Pending'),
           created != null ? DateFormat("dd/MM/yyyy HH:mm").format(created) : "-",
           resolved != null ? DateFormat("dd/MM/yyyy HH:mm").format(resolved) : "-",
         ];
@@ -816,7 +817,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
       final dir = await getTemporaryDirectory();
       final file = File("${dir.path}/topup_requests.xlsx");
       final bytes = excel.save();
-      if (bytes == null) throw Exception("Gagal buat Excel");
+      if (bytes == null) throw Exception(AppTranslations.get('Failed'));
       await file.writeAsBytes(bytes);
 
       await Share.shareXFiles([XFile(file.path)], text: "Top Up Requests");
@@ -842,15 +843,15 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
     switch (status) {
       case "approved":
         statusColor = const Color(0xFF14C38E);
-        statusText = "Disahkan";
+        statusText = AppTranslations.get('Approved');
         break;
       case "rejected":
         statusColor = Colors.red;
-        statusText = "Ditolak";
+        statusText = AppTranslations.get('Rejected');
         break;
       default:
         statusColor = const Color(0xFFFFA000);
-        statusText = "Menunggu";
+        statusText = AppTranslations.get('Pending');
     }
 
     return Container(
@@ -877,7 +878,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      data["customer_name"] ?? "Pengguna",
+                      data["customer_name"] ?? AppTranslations.get('Customer'),
                       style: GoogleFonts.poppins(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -945,7 +946,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
                         elevation: 0,
                       ),
                       child: Text(
-                        "Sahkan",
+                        AppTranslations.get('Confirm'),
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                     ),
@@ -965,7 +966,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
                         elevation: 0,
                       ),
                       child: Text(
-                        "Tolak",
+                        AppTranslations.get('Reject'),
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                     ),
@@ -1001,7 +1002,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
                   Icon(Icons.swap_vertical_circle, size: 20, color: const Color(0xFF0D7377)),
                   const SizedBox(width: 8),
                   Text(
-                    "Manual Wallet",
+                    AppTranslations.get('My Wallet'),
                     style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600, color: const Color(0xFF0D7377)),
                   ),
                 ],
@@ -1010,7 +1011,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
               TextField(
                 controller: searchCtrl,
                 decoration: InputDecoration(
-                  hintText: "Cari pengguna...",
+                  hintText: AppTranslations.get('Search user...'),
                   hintStyle: GoogleFonts.poppins(color: Colors.grey.shade400, fontSize: 13),
                   prefixIcon: const Icon(Icons.search, color: Color(0xFF0D7377)),
                   suffixIcon: searchCtrl.text.isNotEmpty
@@ -1055,13 +1056,13 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
                     if (users.isEmpty) {
                       return Padding(
                         padding: const EdgeInsets.only(top: 12),
-                        child: Text("Tiada pengguna dijumpai", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade500)),
+                        child: Text(AppTranslations.get('No users found'), style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade500)),
                       );
                     }
                     return Column(
                       children: users.map((doc) {
                         final data = doc.data() as Map<String, dynamic>;
-                        final name = data["full_name"] ?? "Tanpa Nama";
+                        final name = data["full_name"] ?? AppTranslations.get('Customer');
                         final bal = (data["wallet_balance"] ?? 0).toDouble();
                         return Padding(
                           padding: const EdgeInsets.only(top: 10),
@@ -1159,7 +1160,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey)),
+            child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () {
@@ -1182,7 +1183,7 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Pengesahan", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(AppTranslations.get('Confirm'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: Text(
           isAdd
               ? "Tambah ${_formatRM(amount)} untuk $name?"
@@ -1192,11 +1193,11 @@ class _AdminWalletScreenState extends State<AdminWalletScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey)),
+            child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text("Ya", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600)),
+            child: Text(AppTranslations.get('Yes'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600)),
           ),
         ],
       ),

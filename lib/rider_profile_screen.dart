@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import 'dart:typed_data';
+import 'translations.dart';
 
 class RiderProfileScreen extends StatefulWidget {
   const RiderProfileScreen({super.key});
@@ -23,11 +24,24 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
   Map<String, dynamic>? _riderData;
   Map<String, dynamic>? _userData;
   bool _loading = true;
+  double _avgRating = 0;
+  int _ratingCount = 0;
 
   @override
   void initState() {
     super.initState();
+    AppTranslations.languageNotifier.addListener(_onLangChange);
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    AppTranslations.languageNotifier.removeListener(_onLangChange);
+    super.dispose();
+  }
+
+  void _onLangChange() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadData() async {
@@ -36,10 +50,20 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     try {
       final riderDoc = await firestore.collection("riders").doc(uid).get();
       final userDoc = await firestore.collection("users").doc(uid).get();
+      final ratingSnap = await firestore
+          .collection("ratings")
+          .where("rider_uid", isEqualTo: uid)
+          .get();
+      double total = 0;
+      for (final doc in ratingSnap.docs) {
+        total += (doc.data()["rating"] ?? 0).toDouble();
+      }
       if (mounted) {
         setState(() {
           _riderData = riderDoc.data();
           _userData = userDoc.data();
+          _avgRating = ratingSnap.docs.isNotEmpty ? total / ratingSnap.docs.length : 0;
+          _ratingCount = ratingSnap.docs.length;
           _loading = false;
         });
       }
@@ -55,18 +79,18 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Tukar Nama", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(AppTranslations.get('Change Name'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: TextField(
           controller: ctrl,
           style: GoogleFonts.poppins(fontSize: 14),
           decoration: InputDecoration(
-            labelText: "Nama Penuh",
+            labelText: AppTranslations.get('Full Name'),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Simpan", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppTranslations.get('Save'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -82,7 +106,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
           _riderData?["full_name"] = name;
           _userData?["full_name"] = name;
         });
-        _showSnack("Nama berjaya dikemas kini");
+        _showSnack(AppTranslations.get('Name updated'));
       }
     } catch (e) {
       _showSnack("Ralat: $e");
@@ -97,11 +121,11 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Tukar Email", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        title: Text(AppTranslations.get('Change Email'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text("Email semasa: $currentEmail", style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600)),
+            Text("${AppTranslations.get('Current email')}: $currentEmail", style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600)),
             const SizedBox(height: 12),
             TextField(
               controller: ctrl,
@@ -120,8 +144,8 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Hantar Pengesahan", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppTranslations.get('Send Verification'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -143,7 +167,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
               style: GoogleFonts.poppins(fontSize: 13),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: Text("OK", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppTranslations.get('OK'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
             ],
           ),
         );
@@ -188,8 +212,8 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
           style: GoogleFonts.poppins(fontSize: 13),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Hantar", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppTranslations.get('Send'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -208,7 +232,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
               style: GoogleFonts.poppins(fontSize: 13),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: Text("OK", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
+              TextButton(onPressed: () => Navigator.pop(ctx), child: Text(AppTranslations.get('OK'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
             ],
           ),
         );
@@ -245,7 +269,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                 items: bankTypes.map((b) => DropdownMenuItem(value: b, child: Text(b, style: GoogleFonts.poppins(fontSize: 13)))).toList(),
                 onChanged: (v) => setDialogState(() => selectedBank = v ?? selectedBank),
                 decoration: InputDecoration(
-                  labelText: "Pilih Bank",
+                  labelText: AppTranslations.get('Select Bank'),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 dropdownColor: Colors.white,
@@ -255,7 +279,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
               TextField(
                 controller: ctrl,
                 decoration: InputDecoration(
-                  labelText: "Nombor Akaun Bank",
+                  labelText: AppTranslations.get('Bank Account Number'),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 style: GoogleFonts.poppins(fontSize: 14),
@@ -269,8 +293,8 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text("Batal", style: GoogleFonts.poppins(color: Colors.grey))),
-            TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text("Hantar Permohonan", style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(AppTranslations.get('Cancel'), style: GoogleFonts.poppins(color: Colors.grey))),
+            TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(AppTranslations.get('Send Request'), style: GoogleFonts.poppins(color: const Color(0xFF0D7377), fontWeight: FontWeight.w600))),
           ],
         ),
       ),
@@ -325,7 +349,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Profil Rider", style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377))),
+            Text(AppTranslations.get('Rider Profile'), style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377))),
             const SizedBox(height: 20),
 
             // ── Profile Card ──
@@ -353,30 +377,91 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
             ),
             const SizedBox(height: 24),
 
-            // ── Edit Sections ──
-            _sectionHeader("Nama", Icons.person_outline),
-            _infoTile("Nama Penuh", name, _editName, canEdit: true),
+            // ── Rating Display ──
+            if (_ratingCount > 0)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F8E9),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF0D7377).withOpacity(0.15)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D7377).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.star, color: Color(0xFFFCD34D), size: 24),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppTranslations.get('Average Rating'),
+                            style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Text(
+                                _avgRating.toStringAsFixed(1),
+                                style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377)),
+                              ),
+                              const SizedBox(width: 8),
+                              Row(
+                                children: List.generate(5, (i) {
+                                  return Icon(
+                                    i < _avgRating.round() ? Icons.star : Icons.star_border,
+                                    size: 16,
+                                    color: const Color(0xFFFCD34D),
+                                  );
+                                }),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                "($_ratingCount)",
+                                style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade500),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            const SizedBox(height: 24),
+            _sectionHeader(AppTranslations.get('Full Name'), Icons.person_outline),
+            _infoTile(AppTranslations.get('Full Name'), name, _editName, canEdit: true),
 
             const SizedBox(height: 16),
-            _sectionHeader("Email", Icons.email_outlined),
-            _infoTile("Email", email, _editEmail, canEdit: true),
-            _infoTile("Kata Laluan", "********", _editPassword, canEdit: true),
+            _sectionHeader(AppTranslations.get('Email'), Icons.email_outlined),
+            _infoTile(AppTranslations.get('Email'), email, _editEmail, canEdit: true),
+            _infoTile(AppTranslations.get('Password'), "********", _editPassword, canEdit: true),
 
             const SizedBox(height: 16),
-            _sectionHeader("Motor & Dokumen", Icons.motorcycle),
-            _docStatus("Gambar Diri", _riderData?["rider_photo"]),
-            _docStatus("Lesen Depan", _riderData?["license_front"]),
-            _docStatus("Lesen Belakang", _riderData?["license_back"]),
-            _docStatus("Cukai Jalan", _riderData?["road_tax"]),
-            _docStatus("Gambar Motor", _riderData?["motorcycle_photo"]),
-            _docStatus("Insurans", _riderData?["insurance"]),
+            _sectionHeader(AppTranslations.get('Motorcycle & Documents'), Icons.motorcycle),
+            _docStatus(AppTranslations.get('Selfie Photo'), _riderData?["rider_photo"]),
+            _docStatus(AppTranslations.get('License (Front)'), _riderData?["license_front"]),
+            _docStatus(AppTranslations.get('License (Back)'), _riderData?["license_back"]),
+            _docStatus(AppTranslations.get('Road Tax'), _riderData?["road_tax"]),
+            _docStatus(AppTranslations.get('Motorcycle Photo'), _riderData?["motorcycle_photo"]),
+            _docStatus(AppTranslations.get('Insurance'), _riderData?["insurance"]),
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: _editMotor,
                 icon: const Icon(Icons.upload_file, size: 18),
-                label: Text("Kemas Kini Dokumen", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                label: Text(AppTranslations.get('Update Documents'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFF0D7377),
                   side: const BorderSide(color: Color(0xFF0D7377)),
@@ -387,8 +472,8 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
             ),
 
             const SizedBox(height: 16),
-            _sectionHeader("Bank", Icons.account_balance),
-            _infoTile("Akaun Bank", "$bankType - $bankAccount", _editBank, canEdit: true),
+            _sectionHeader(AppTranslations.get('Bank'), Icons.account_balance),
+            _infoTile(AppTranslations.get('Bank'), "$bankType - $bankAccount", _editBank, canEdit: true),
 
             const SizedBox(height: 32),
           ],
@@ -440,7 +525,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                   color: const Color(0xFF0D7377).withOpacity(0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text("Edit", style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF0D7377))),
+                child: Text(AppTranslations.get('Edit'), style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: const Color(0xFF0D7377))),
               ),
             ),
         ],
@@ -463,7 +548,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
           const SizedBox(width: 10),
           Text(label, style: GoogleFonts.poppins(fontSize: 13, color: const Color(0xFF2E3A46))),
           const Spacer(),
-          Text(hasDoc ? "Ada" : "Perlu dikemas kini", style: GoogleFonts.poppins(fontSize: 11, color: hasDoc ? const Color(0xFF14C38E) : Colors.orange)),
+          Text(hasDoc ? AppTranslations.get('Available') : AppTranslations.get('Needs update'), style: GoogleFonts.poppins(fontSize: 11, color: hasDoc ? const Color(0xFF14C38E) : Colors.orange)),
         ],
       ),
     );
@@ -621,16 +706,16 @@ class _MotorEditDialogState extends State<_MotorEditDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Kemas Kini Dokumen", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377))),
+              Text(AppTranslations.get('Update Documents'), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377))),
               const SizedBox(height: 4),
-              Text("Muat naik gambar baru untuk diganti", style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)),
+              Text(AppTranslations.get('Upload new images to replace'), style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey.shade600)),
               const SizedBox(height: 16),
-              _imageCard("Gambar Diri", _riderPhoto, () async { final f = await _pick(); if (f != null) setState(() => _riderPhoto = f); }),
-              _imageCard("Lesen Depan", _licenseFront, () async { final f = await _pick(); if (f != null) setState(() => _licenseFront = f); }),
-              _imageCard("Lesen Belakang", _licenseBack, () async { final f = await _pick(); if (f != null) setState(() => _licenseBack = f); }),
-              _imageCard("Cukai Jalan", _roadTax, () async { final f = await _pick(); if (f != null) setState(() => _roadTax = f); }),
-              _imageCard("Gambar Motor (Plat Jelas)", _motorcyclePhoto, () async { final f = await _pick(); if (f != null) setState(() => _motorcyclePhoto = f); }),
-              _imageCard("Insurans", _insurance, () async { final f = await _pick(); if (f != null) setState(() => _insurance = f); }),
+              _imageCard(AppTranslations.get('Selfie Photo'), _riderPhoto, () async { final f = await _pick(); if (f != null) setState(() => _riderPhoto = f); }),
+              _imageCard(AppTranslations.get('License (Front)'), _licenseFront, () async { final f = await _pick(); if (f != null) setState(() => _licenseFront = f); }),
+              _imageCard(AppTranslations.get('License (Back)'), _licenseBack, () async { final f = await _pick(); if (f != null) setState(() => _licenseBack = f); }),
+              _imageCard(AppTranslations.get('Road Tax'), _roadTax, () async { final f = await _pick(); if (f != null) setState(() => _roadTax = f); }),
+              _imageCard(AppTranslations.get('Motorcycle Photo (Plate visible)'), _motorcyclePhoto, () async { final f = await _pick(); if (f != null) setState(() => _motorcyclePhoto = f); }),
+              _imageCard(AppTranslations.get('Insurance'), _insurance, () async { final f = await _pick(); if (f != null) setState(() => _insurance = f); }),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -644,7 +729,7 @@ class _MotorEditDialogState extends State<_MotorEditDialog> {
                   ),
                   child: _saving
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text("Simpan Dokumen", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
+                      : Text(AppTranslations.get('Save Documents'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 14)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -652,7 +737,7 @@ class _MotorEditDialogState extends State<_MotorEditDialog> {
                 width: double.infinity,
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text("Tutup", style: GoogleFonts.poppins(color: Colors.grey.shade500)),
+                  child: Text(AppTranslations.get('Close'), style: GoogleFonts.poppins(color: Colors.grey.shade500)),
                 ),
               ),
             ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'translations.dart';
 
 class AdminFeedbackScreen extends StatefulWidget {
   const AdminFeedbackScreen({super.key});
@@ -30,6 +31,20 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
     "Pujian": Colors.green,
     "Lain-lain": Colors.grey,
   };
+
+  String _displayFilter(String f) {
+    switch (f) {
+      case "Semua": return AppTranslations.get('All');
+      case "Cadangan": return AppTranslations.get('Suggestion');
+      case "Aduan": return AppTranslations.get('Complaint');
+      case "Pujian": return AppTranslations.get('Praise');
+      case "Lain-lain": return AppTranslations.get('Other');
+      case "Hari Ini": return AppTranslations.get('Today');
+      case "Minggu Ini": return AppTranslations.get('This Week');
+      case "Bulan Ini": return AppTranslations.get('This Month');
+      default: return f;
+    }
+  }
 
   @override
   void dispose() {
@@ -69,7 +84,7 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Maklum Balas",
+          AppTranslations.get('Feedback'),
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -120,7 +135,7 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
                 controller: _search,
                 style: GoogleFonts.poppins(fontSize: 14),
                 decoration: InputDecoration(
-                  hintText: "Cari maklum balas...",
+                  hintText: AppTranslations.get('Search feedback...'),
                   hintStyle: GoogleFonts.poppins(
                     color: Colors.grey.shade400,
                     fontSize: 13,
@@ -175,7 +190,7 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
                                   items: _types.map((t) {
                                     return DropdownMenuItem(
                                       value: t,
-                                      child: Text(t),
+                                      child: Text(_displayFilter(t)),
                                     );
                                   }).toList(),
                                   onChanged: (v) {
@@ -209,7 +224,7 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
                                     return DropdownMenuItem(
                                       value: d,
                                       child: Text(
-                                        d,
+                                        _displayFilter(d),
                                         style: GoogleFonts.poppins(
                                           fontSize: 13,
                                           color: const Color(0xFF0D7377),
@@ -241,7 +256,7 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
                   if (snapshot.hasError) {
                     return Center(
                       child: Text(
-                        "Ralat: ${snapshot.error}",
+                        "${AppTranslations.get('Error')}: ${snapshot.error}",
                         style: GoogleFonts.poppins(color: Colors.red),
                       ),
                     );
@@ -278,7 +293,7 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            "Tiada maklum balas",
+                            AppTranslations.get('No feedback'),
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               color: Colors.grey.shade500,
@@ -363,14 +378,14 @@ class _AdminFeedbackScreenState extends State<AdminFeedbackScreen> {
                                       color: color.withOpacity(0.15),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
-                                    child: Text(
-                                      type,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: color,
+                                      child: Text(
+                                        _displayFilter(type),
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: color,
+                                        ),
                                       ),
-                                    ),
                                   ),
                                 ],
                               ),

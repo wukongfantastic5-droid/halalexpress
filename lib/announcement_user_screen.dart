@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'translations.dart';
 
 class AnnouncementUserScreen extends StatelessWidget {
 
@@ -34,7 +35,7 @@ class AnnouncementUserScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(
-            "Maklumat Terkini",
+            AppTranslations.get('Latest Info'),
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
               color: Colors.white,
@@ -101,7 +102,7 @@ class AnnouncementUserScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 16),
                       Text(
-                        "Tiada maklumat terkini",
+                        "No latest info",
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           color: Colors.white.withOpacity(0.7),
@@ -153,7 +154,7 @@ class AnnouncementUserScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                "Pengumuman",
+                                AppTranslations.get('Announcements'),
                                 style: GoogleFonts.poppins(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -162,7 +163,7 @@ class AnnouncementUserScreen extends StatelessWidget {
                               ),
                               SizedBox(height: 2),
                               Text(
-                                "${docs.length} maklumat terkini",
+                                "${docs.length} latest info",
                                 style: GoogleFonts.poppins(
                                   fontSize: 13,
                                   color: Colors.white.withOpacity(0.8),

@@ -11,6 +11,7 @@ import 'admin_feedback_screen.dart';
 import 'admin_rider_verify_screen.dart';
 import 'admin_wallet_screen.dart';
 import 'widgets/bunny_icon.dart';
+import 'translations.dart';
 
 class AdminMainNav extends StatefulWidget {
   const AdminMainNav({super.key});
@@ -60,7 +61,7 @@ class _AdminMainNavState extends State<AdminMainNav> {
           ],
         ),
         content: Text(
-          "Sudah 7 hari! Jalan export_delete.js untuk backup data sebelum dipadam dari server.",
+          AppTranslations.get("It's been 7 days! Run export_delete.js to backup data before it's deleted from server."),
           style: GoogleFonts.poppins(fontSize: 13),
         ),
         actions: [
@@ -69,7 +70,7 @@ class _AdminMainNavState extends State<AdminMainNav> {
               await prefs.setInt("lastExportReminder", now);
               if (ctx.mounted) Navigator.pop(ctx);
             },
-            child: Text("Saya Dah Export", style: GoogleFonts.poppins(color: const Color(0xFF14C38E))),
+            child: Text(AppTranslations.get("I've Exported"), style: GoogleFonts.poppins(color: const Color(0xFF14C38E))),
           ),
         ],
       ),
@@ -108,7 +109,7 @@ class _AdminMainNavState extends State<AdminMainNav> {
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      "BunnyFresh",
+                      "HalalExpress",
                       style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 16,
@@ -118,7 +119,7 @@ class _AdminMainNavState extends State<AdminMainNav> {
                     const Spacer(),
                     IconButton(
                       icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
-                      tooltip: "Log keluar",
+                      tooltip: AppTranslations.get('Logout'),
                       onPressed: () async {
                         await FirebaseAuth.instance.signOut();
                         if (!context.mounted) return;
@@ -140,12 +141,12 @@ class _AdminMainNavState extends State<AdminMainNav> {
                 ),
                 child: Row(
                   children: [
-                    _tab("Dashboard", 0),
-                    _tab("Pesanan", 1),
-                    _tab("Pengumuman", 2),
-                    _tab("Maklum Balas", 3),
-                    _tab("Rider", 4),
-                    _tab("Wallet", 5),
+                    _tab(AppTranslations.get('Dashboard'), 0),
+                    _tab(AppTranslations.get('Orders'), 1),
+                    _tab(AppTranslations.get('Announcements'), 2),
+                    _tab(AppTranslations.get('Feedback'), 3),
+                    _tab(AppTranslations.get('Rider'), 4),
+                    _tab(AppTranslations.get('Wallet'), 5),
                   ],
                 ),
               ),

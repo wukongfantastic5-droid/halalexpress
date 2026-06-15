@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'translations.dart';
 
 class TrackingMapScreen extends StatefulWidget {
   final String orderId;
@@ -54,7 +55,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
   void _initData() {
     final d = widget.orderData;
     _riderName = (d["rider_name"] ?? "").toString();
-    _shopName = (d["shop"] ?? d["shop_name"] ?? "Kedai").toString();
+    _shopName = (d["shop"] ?? d["shop_name"] ?? AppTranslations.get('Shop')).toString();
     _dropName = (d["drop"] ?? d["drop_name"] ?? "Destinasi").toString();
     _hasRider = _riderName.isNotEmpty;
     _fetchETA();
@@ -170,7 +171,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       backgroundColor: const Color(0xFF0D7377),
       appBar: AppBar(
         title: Text(
-          "Anggaran Masa",
+          AppTranslations.get('Estimated Time'),
           style: GoogleFonts.poppins(fontSize: 16),
         ),
         backgroundColor: const Color(0xFF0D7377),
@@ -197,7 +198,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
                         const SizedBox(height: 24),
                         _buildETACard(
                           Icons.person_pin_circle,
-                          "Rider ke Kedai",
+                          AppTranslations.get('Rider to Shop'),
                           _riderToShopMin,
                           _riderToShopKm,
                           _hasRider,
@@ -207,7 +208,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
                         const SizedBox(height: 12),
                         _buildETACard(
                           Icons.store,
-                          "Kedai ke Destinasi",
+                          AppTranslations.get('Shop to Destination'),
                           _shopToDropMin,
                           _shopToDropKm,
                           true,
@@ -425,7 +426,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
       child: Column(
         children: [
           Text(
-            "Jumlah Anggaran Masa",
+            AppTranslations.get('Total Estimated Time'),
             style: GoogleFonts.poppins(
               fontSize: 12,
               color: Colors.white.withValues(alpha: 0.8),
@@ -458,7 +459,7 @@ class _TrackingMapScreenState extends State<TrackingMapScreen> {
             ),
           ] else ...[
             Text(
-              "Mengira...",
+              AppTranslations.get('Calculating...'),
               style: GoogleFonts.poppins(
                 fontSize: 20,
                 color: Colors.white,

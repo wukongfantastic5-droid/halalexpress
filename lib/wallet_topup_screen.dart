@@ -10,6 +10,7 @@ import 'package:installed_apps/installed_apps.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'translations.dart';
 
 class WalletTopupScreen extends StatefulWidget {
   const WalletTopupScreen({super.key});
@@ -25,8 +26,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
   bool _loading = true;
   bool _submitting = false;
 
-  static const _adminWhatsApp = "60123456789";
-  static const _adminPhone = "+60-12-345 6789";
+  String _adminPhone = "";
 
   static const _allBanks = [
     {"name": "Touch 'n Go eWallet", "package": "my.com.tngdigital.ewallet", "icon": Icons.phone_android},
@@ -39,6 +39,19 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
   void initState() {
     super.initState();
     _loadBalance();
+    _loadAdminPhone();
+  }
+
+  Future<void> _loadAdminPhone() async {
+    try {
+      final snap = await firestore.collection("users").where("role", isEqualTo: "admin").limit(1).get();
+      if (snap.docs.isNotEmpty && mounted) {
+        final phone = snap.docs.first.data()["whatsapp"] as String?;
+        if (phone != null && phone.isNotEmpty) {
+          setState(() => _adminPhone = phone);
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadBalance() async {
@@ -65,11 +78,11 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
     final amountText = amountCtrl.text.trim();
     final amount = double.tryParse(amountText);
     if (amount == null || amount <= 0) {
-      _showSnack("Sila masukkan jumlah yang sah");
+      _showSnack(AppTranslations.get('Please enter a valid amount'));
       return;
     }
     if (amount > 5000) {
-      _showSnack("Jumlah maksimum RM5,000 untuk sekali top up");
+      _showSnack(AppTranslations.get('Maximum RM5000 per top up'));
       return;
     }
     _showBankSelection(amount);
@@ -95,12 +108,12 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              "Pilih Bank untuk Bayar",
+              AppTranslations.get('Select Bank to Pay'),
               style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377)),
             ),
             const SizedBox(height: 6),
             Text(
-              "Jumlah: ${_formatRM(amount)}",
+              "${AppTranslations.get('Amount')}: ${_formatRM(amount)}",
               style: GoogleFonts.poppins(fontSize: 14, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 20),
@@ -168,7 +181,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
       amountCtrl.clear();
       if (mounted) _showQRDialog(amount, bankName);
     } catch (e) {
-      _showSnack("Ralat: $e");
+      _showSnack("${AppTranslations.get('Error')}: $e");
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -194,7 +207,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      "Bayar RM${amount.toStringAsFixed(2)}",
+                      "${AppTranslations.get('Pay')} RM${amount.toStringAsFixed(2)}",
                       style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377)),
                     ),
                   ),
@@ -206,7 +219,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                "Guna $bankName",
+                "${AppTranslations.get('Use')} $bankName",
                 style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 20),
@@ -238,7 +251,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
                       children: [
                         Icon(Icons.qr_code_2_rounded, size: 60, color: const Color(0xFF0D7377).withOpacity(0.4)),
                         const SizedBox(height: 6),
-                        Text("QR belum dimuat naik", style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade400)),
+                        Text(AppTranslations.get('QR not uploaded yet'), style: GoogleFonts.poppins(fontSize: 11, color: Colors.grey.shade400)),
                       ],
                     ),
                   ),
@@ -251,7 +264,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _saveQRToGallery(b64!),
                     icon: const Icon(Icons.download, size: 18),
-                    label: Text("Simpan QR", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                    label: Text(AppTranslations.get('Save QR'), style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0D7377),
                       foregroundColor: Colors.white,
@@ -268,7 +281,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => _showInstalledBanksSheet(),
                   icon: const Icon(Icons.open_in_new, size: 18),
-                  label: Text("Buka $bankName", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
+                  label: Text("${AppTranslations.get('Open')} $bankName", style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFF0D7377),
                     side: const BorderSide(color: Color(0xFF0D7377)),
@@ -294,7 +307,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Akaun TnG E-Wallet",
+                              AppTranslations.get('TnG E-Wallet Account'),
                               style: GoogleFonts.poppins(fontSize: 10, color: Colors.grey.shade500),
                             ),
                             const SizedBox(height: 2),
@@ -308,7 +321,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
                       InkWell(
                         onTap: () {
                           Clipboard.setData(ClipboardData(text: tngAccount));
-                          _showSnack("Nombor akaun disalin");
+                          _showSnack(AppTranslations.get('Account number copied'));
                         },
                         borderRadius: BorderRadius.circular(8),
                         child: Container(
@@ -323,7 +336,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
                               Icon(Icons.copy, size: 14, color: Colors.white),
                               const SizedBox(width: 4),
                               Text(
-                                "Salin",
+                                AppTranslations.get('Copy'),
                                 style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
                               ),
                             ],
@@ -348,7 +361,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "Selepas bayar, WhatsApp bukti bayaran ke $_adminPhone. Admin akan sahkan dalam 1-24 jam.",
+                        "${AppTranslations.get('After payment, WhatsApp the payment receipt to')} $_adminPhone. ${AppTranslations.get('Admin will verify within 1-24 hours.')}",
                         style: GoogleFonts.poppins(fontSize: 11, color: const Color(0xFFBF360C)),
                       ),
                     ),
@@ -368,9 +381,9 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
       final dir = await getTemporaryDirectory();
       final file = File("${dir.path}/qr_tng.png");
       await file.writeAsBytes(bytes);
-      await Share.shareXFiles([XFile(file.path)], text: "QR TnG - BunnyFresh");
+      await Share.shareXFiles([XFile(file.path)], text: "QR TnG - HalalExpress");
     } catch (e) {
-      _showSnack("Ralat: $e");
+      _showSnack("${AppTranslations.get('Error')}: $e");
     }
   }
 
@@ -383,7 +396,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
       }
     }
     if (installed.isEmpty) {
-      _showSnack("Tiada app bank dijumpai");
+      _showSnack(AppTranslations.get('No bank apps found'));
       return;
     }
     if (!mounted) return;
@@ -406,12 +419,12 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
             ),
             const SizedBox(height: 20),
             Text(
-              "Pilih App Bank",
+              AppTranslations.get('Select Bank App'),
               style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377)),
             ),
             const SizedBox(height: 6),
             Text(
-              "Aplikasi bank yang dijumpai",
+              AppTranslations.get('Bank apps found'),
               style: GoogleFonts.poppins(fontSize: 13, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 20),
@@ -482,7 +495,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
           icon: const Icon(Icons.arrow_back_ios, color: Color(0xFF0D7377)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text("Dompet Saya", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377))),
+        title: Text(AppTranslations.get('My Wallet'), style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF0D7377))),
         centerTitle: true,
       ),
       body: _loading
@@ -525,7 +538,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Baki Dompet",
+            AppTranslations.get('Wallet Balance'),
             style: GoogleFonts.poppins(
               fontSize: 14,
               color: Colors.white.withOpacity(0.85),
@@ -564,7 +577,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Jumlah Top Up",
+            AppTranslations.get('Top Up Amount'),
             style: GoogleFonts.poppins(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -609,7 +622,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
               child: _submitting
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : Text(
-                      "Hantar Permohonan",
+                      AppTranslations.get('Submit Request'),
                       style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w600),
                     ),
             ),
@@ -628,7 +641,7 @@ class _WalletTopupScreenState extends State<WalletTopupScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "Selepas bayar, WhatsApp bukti bayaran ke $_adminPhone untuk pengesahan. Admin akan sahkan dalam masa 1-24 jam.",
+                    "${AppTranslations.get('After payment, WhatsApp the payment receipt to')} $_adminPhone ${AppTranslations.get('for verification. Admin will verify within 1-24 hours.')}",
                     style: GoogleFonts.poppins(fontSize: 12, color: const Color(0xFFBF360C)),
                   ),
                 ),

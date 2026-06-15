@@ -6,9 +6,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:open_file/open_file.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'translations.dart';
 
 class ForceUpdateScreen extends StatefulWidget {
   final String downloadUrl;
@@ -28,7 +28,7 @@ class ForceUpdateScreen extends StatefulWidget {
 
 class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
   double _progress = 0;
-  String _status = "Sedia untuk muat turun";
+  String _status = AppTranslations.get('Ready to download');
   bool _downloading = false;
   bool _done = false;
   bool _openFailed = false;
@@ -44,7 +44,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
   Future<bool> _checkInstallPermission() async {
     if (!Platform.isAndroid) return true;
     try {
-      final allowed = await MethodChannel("com.kampungrider/install_permission")
+      final allowed = await MethodChannel("com.halalexpress/install_permission")
           .invokeMethod<bool>("canRequestPackageInstalls");
       return allowed == true;
     } catch (_) {
@@ -54,7 +54,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
 
   Future<void> _openInstallSettings() async {
     try {
-      await MethodChannel("com.kampungrider/install_permission")
+      await MethodChannel("com.halalexpress/install_permission")
           .invokeMethod("openInstallSettings");
     } catch (_) {}
   }
@@ -65,11 +65,11 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         title: Text(
-          "Kebenaran Pemasangan",
+          AppTranslations.get('Install Permission'),
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
         content: Text(
-          "Sila benarkan \"Pasang aplikasi tidak diketahui\" daripada sumber ini di seting peranti untuk memasang versi terbaru.",
+          AppTranslations.get('Please enable "Install unknown apps" from this source in device settings to install the latest version.'),
           style: GoogleFonts.poppins(fontSize: 13),
         ),
         actions: [
@@ -78,7 +78,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
               Navigator.pop(ctx);
               _openInstallSettings();
             },
-            child: Text("Buka Seting", style: GoogleFonts.poppins()),
+            child: Text(AppTranslations.get('Open Settings'), style: GoogleFonts.poppins()),
           ),
         ],
       ),
@@ -94,7 +94,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
 
     setState(() {
       _downloading = true;
-      _status = "Memuat turun...";
+      _status = AppTranslations.get('Downloading...');
       _progress = 0;
       _done = false;
       _openFailed = false;
@@ -102,14 +102,14 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
 
     try {
       final dir = await getTemporaryDirectory();
-      _filePath = "${dir.path}/bunnyfresh_${widget.latestVersion}.apk";
+      _filePath = "${dir.path}/halalexpress_${widget.latestVersion}.apk";
       final filePath = _filePath;
 
       final request = http.Request("GET", Uri.parse(widget.downloadUrl));
       final response = await http.Client().send(request);
 
       if (response.statusCode != 200) {
-        if (mounted) setState(() => _status = "Gagal muat turun (${response.statusCode})");
+        if (mounted) setState(() => _status = "${AppTranslations.get('Download failed')} (${response.statusCode})");
         return;
       }
 
@@ -124,7 +124,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
         if (totalBytes > 0 && mounted) {
           setState(() {
             _progress = receivedBytes / totalBytes;
-            _status = "Memuat turun... ${(_progress * 100).toStringAsFixed(0)}%";
+            _status = "${AppTranslations.get('Downloading...')} ${(_progress * 100).toStringAsFixed(0)}%";
           });
         }
       }
@@ -133,27 +133,28 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
 
       if (!mounted) return;
 
-      setState(() => _status = "Membuka pemasang...");
+      setState(() => _status = AppTranslations.get('Opening installer...'));
 
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (!mounted) return;
 
-      final result = await OpenFile.open(filePath);
-      if (result.type == ResultType.done) {
+      try {
+        await MethodChannel("com.halalexpress/install_apk")
+            .invokeMethod("installApk", filePath);
         setState(() {
           _done = true;
-          _status = "Selesaikan pemasangan pada skrin seterusnya";
+          _status = AppTranslations.get('Complete installation on next screen');
         });
-      } else {
+      } catch (e) {
         setState(() {
           _done = true;
           _openFailed = true;
-          _status = "Gagal buka automatik. Buka fail APK secara manual.";
+          _status = AppTranslations.get('Failed to open automatically. Open the APK file manually.');
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _status = "Ralat: $e");
+      if (mounted) setState(() => _status = "${AppTranslations.get('Error')}: $e");
     }
   }
 
@@ -183,7 +184,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  "Kemas Kini Diperlukan",
+                  AppTranslations.get('Update Required'),
                   style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -192,7 +193,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  "Versi baru tersedia. Sila muat turun dan pasang untuk terus menggunakan aplikasi.",
+                  AppTranslations.get('New version available. Please download and install to continue using the app.'),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 13,
@@ -211,7 +212,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Versi semasa: ",
+                        "${AppTranslations.get('Current version')}: ",
                         style: GoogleFonts.poppins(fontSize: 12, color: Colors.white70),
                       ),
                       Text(
@@ -226,7 +227,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
                       Icon(Icons.arrow_forward, size: 16, color: Colors.white.withOpacity(0.5)),
                       const SizedBox(width: 16),
                       Text(
-                        "Versi baru: ",
+                        "${AppTranslations.get('New version')}: ",
                         style: GoogleFonts.poppins(fontSize: 12, color: Colors.white70),
                       ),
                       Text(
@@ -266,7 +267,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
                       onPressed: _done ? null : _startDownload,
                       icon: const Icon(Icons.download_rounded, size: 20),
                       label: Text(
-                        "Muat Turun & Pasang",
+                        AppTranslations.get('Download & Install'),
                         style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -282,7 +283,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
                   if (_done && !_openFailed) ...[
                     const SizedBox(height: 10),
                     Text(
-                      "Pemasangan akan dibuka secara automatik. Selesaikan pada skrin seterusnya.",
+                      AppTranslations.get('The installer will open automatically. Complete on the next screen.'),
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
                         fontSize: 11,
@@ -293,7 +294,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
                   if (_done && _openFailed) ...[
                     const SizedBox(height: 10),
                     Text(
-                      "Lokasi fail: $_filePath",
+                      "${AppTranslations.get('File location:')} $_filePath",
                       textAlign: TextAlign.center,
                       style: GoogleFonts.poppins(
                         fontSize: 10,
@@ -305,7 +306,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
                       onPressed: _startDownload,
                       icon: const Icon(Icons.refresh, size: 16, color: Colors.white),
                       label: Text(
-                        "Cuba buka semula",
+                        AppTranslations.get('Try opening again'),
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: Colors.white,
@@ -329,7 +330,7 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
 Future<Map<String, String>?> _fetchLatestRelease() async {
   try {
     final res = await http.Client().get(
-      Uri.parse("https://api.github.com/repos/wukongfantastic5-droid/bunnyfresh/releases/latest"),
+      Uri.parse("https://api.github.com/repos/wukongfantastic5-droid/halalexpress/releases/latest"),
       headers: {"Accept": "application/vnd.github.v3+json"},
     );
     if (res.statusCode != 200) return null;
@@ -465,7 +466,7 @@ class _MaintenanceScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  "Penyelenggaraan",
+                  AppTranslations.get('Maintenance'),
                   style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -474,7 +475,7 @@ class _MaintenanceScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  "Servis sedang dalam penyelenggaraan. Sila cuba sebentar lagi.",
+                  AppTranslations.get('Service is under maintenance. Please try again later.'),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.poppins(
                     fontSize: 13,
